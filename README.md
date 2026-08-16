@@ -48,6 +48,16 @@ For one project only, copy into the repo's `.claude/skills/` or
 | `strk20-anonymizer-contracts` | Cairo `privacy_invoke` helper contracts for private DeFi | 4 pages: anatomy, swap helper, Vesu lending, escrow |
 | `strk20-privacy-sdk` | Privacy wallets and backends holding their own keys, SDK debugging | 11 SDK pages plus the upstream SDK README |
 
+## Contributing
+
+If you hit an STRK20 edge case that this repository misses, send the fix back.
+Pull requests are welcome for new flows, corrected moving facts, sharper failure
+tables, and clearer skill routing.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before editing. Files under
+`references/` are verbatim upstream snapshots. Refresh them from their source
+instead of rewriting them.
+
 ## What they carry
 
 A sample of the load-bearing details, so you know the level:
