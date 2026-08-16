@@ -1,6 +1,6 @@
 ---
 name: strk20-privacy-sdk
-description: Build privacy wallets and key-holding backends with the Starknet Privacy SDK (@starkware-libs/starknet-privacy-sdk). Covers createPrivateTransfers wiring, register, deposit, transfer, withdraw, multi-op batches, private sub-accounts, note discovery, setup requirements, and proving configuration. Also for debugging SDK submissions: provingBlockId, proofFacts, tip 0n, INVALID_NONCE, note maturity, fresh-account sequencing, AddressMap lookups. If the app talks to the user's wallet instead of holding keys, use strk20-wallet-api. For concepts use strk20-privacy.
+description: "Build privacy wallets and key-holding backends with the Starknet Privacy SDK (@starkware-libs/starknet-privacy-sdk). Covers createPrivateTransfers wiring, register, deposit, transfer, withdraw, multi-op batches, private sub-accounts, note discovery, setup requirements, and proving configuration. Also use for debugging SDK submissions: provingBlockId, proofFacts, tip 0n, INVALID_NONCE, note maturity, fresh-account sequencing, and AddressMap lookups. If the app talks to the user's wallet instead of holding keys, use strk20-wallet-api. For concepts use strk20-privacy."
 ---
 
 # STRK20 Privacy SDK: wallets and key-holding backends
@@ -26,12 +26,16 @@ from GitHub Packages, which needs a GitHub token even for public packages:
 
 ```sh
 gh auth refresh -h github.com -s read:packages
-npm config set @starkware-libs:registry https://npm.pkg.github.com
-npm config set '//npm.pkg.github.com/:_authToken' "$(gh auth token)"
+export NODE_AUTH_TOKEN="$(gh auth token)"
+npm config set @starkware-libs:registry https://npm.pkg.github.com --location=project
+npm config set '//npm.pkg.github.com/:_authToken' '${NODE_AUTH_TOKEN}' --location=project
 npm install @starkware-libs/starknet-privacy-sdk
+unset NODE_AUTH_TOKEN
 ```
 
-or pin a commit: `npm install "starkware-libs/starknet-privacy#<commit-sha>"`.
+The project `.npmrc` stores an environment-variable placeholder, not the token.
+Do not replace it with token text or commit a file containing credentials. Or
+pin a commit: `npm install "starkware-libs/starknet-privacy#<commit-sha>"`.
 The monorepo's `sdk/README.md` covers what the docs pages don't: transaction
 sequencing against finalized state, the `Open` note API, `pre_confirmed`
 reads, and `classifyTransaction` for history. A copy sits in
@@ -70,8 +74,8 @@ by the SDK). Keys and secrets stay in env vars, never in files.
 ## The submission tail (identical for every operation)
 
 ```typescript
-// Prove against a slightly older block: notes mature 10 blocks after
-// creation, and proving at the chain head risks reorg invalidation.
+// Prove against an older block. Inputs and prior transparent state must
+// already exist at this base, and proving at the chain head risks reorgs.
 const provingBlockId = (await provider.getBlockNumber()) - 10
 
 const { callAndProof } = await transfers.build()/* ...ops... */.execute({ provingBlockId })
@@ -87,25 +91,31 @@ const tx = await account.execute(callAndProof.call, { tip: 0n, ...proofDetails }
 await provider.waitForTransaction(tx.transaction_hash)
 ```
 
-Always pass `provingBlockId = currentBlock - 10`. It guarantees note maturity
-at the proof base, buffers L2 reorgs (the contract accepts proofs up to
-`proof_validity_blocks` old, default 450 ≈ 15 min, governance-set), and keeps
-discovery and proving on the same state. Re-fetch it after every
-`waitForTransaction` when chaining transactions.
+Always pass `provingBlockId = currentBlock - 10`. It buffers L2 reorgs (the
+contract accepts proofs up to `proof_validity_blocks` old, default 450 ≈ 15
+min, governance-set) and keeps discovery and proving on the same state. The
+chosen base must already include every note and transparent state change the
+proof reads. Re-fetch it after every `waitForTransaction` when chaining
+transactions.
 
 **The transparent-state rule (per the SDK README):** any onchain state the
-pool proof reads, the account's viewing key, the depositor's token balance,
-the nullifier set, must have been written at least 10 blocks before the
-proof's base block. The prover reads finalized state, never `pre_confirmed`.
-Concretely:
+pool proof reads, including the account's viewing key, depositor token balance,
+allowance, and nullifier set, must exist at the chosen proof base. With
+`provingBlockId = head - 10`, poll until `head - 10 > receiptBlock` for each
+prior state-changing transaction. The prover reads finalized state, never
+`pre_confirmed`. Concretely:
 
 - `register()` fails right after the account's deploy-account transaction.
-  Wait ~10 blocks after the deploy receipt.
-- `deposit()` fails within ~10 blocks of the ERC-20 transfer that funded the
-  account (and the `approve` must have landed too). Wait, then re-fetch
-  `provingBlockId`.
-- A prior private transaction's block must be finalized before you can prove
-  the next one against its notes.
+  Wait until the chosen base is later than the deploy receipt block.
+- `deposit()` fails when the chosen base predates the ERC-20 funding transfer
+  or approval. Wait until the base is later than both receipt blocks, then
+  rebuild.
+- A prior private transaction's block must be included in the finalized base
+  before you can prove the next transaction against its notes.
+
+The bundled `sdk__deposit.md` page re-fetches `provingBlockId` immediately
+after the approval. Do not copy that timing literally. Apply the receipt-block
+condition above so the selected base includes the approval.
 
 ## Operations map
 
@@ -135,12 +145,14 @@ Concretely:
   limits, so fall back to per-recipient transactions, waiting out change-note
   maturity between them.
 - **sub-accounts**: `transfers.build().subaccounts(dappName).invoke(...)`,
-  available as of `0.14.3-rc.4` (`sub_account_anonymizer` package). It needs
+  introduced in `0.14.3-rc.4` (`sub_account_anonymizer` package). GitHub
+  Packages `latest` was `0.14.3-rc.5` on 2026-08-16, while public npmjs still
+  returned 404. It needs
   the `subAccountAnonymizerAddress` field in the `createPrivateTransfers`
   config, and calling `subaccounts(...)` without it throws. `identify()` and
-  `deployed()` are declared but not yet implemented. This is a release
-  candidate: fine for a team that controls its own accounts and tracks the
-  API, and confirm audit readiness before shipping on it.
+  `deployed()` are declared but not yet implemented, per the official
+  agent-skill repo. Treat this release candidate as an API for teams that
+  control their own accounts and can confirm its current audit readiness.
 
 ## Setup requirements before transferring
 
@@ -194,9 +206,9 @@ Telegram (t.me/sncorestars).
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `register()` fails on a fresh account | Deploy not finalized at proof base | Wait ~10 blocks after the deploy receipt |
-| Deposit fails right after funding the account | Funding transfer or approve not ≥10 blocks old at proof base | Wait ~10 blocks, re-fetch `provingBlockId`, then check screening |
-| Spend fails on a recently created note | `provingBlockId` not backed off | Use `currentBlock - 10` |
+| `register()` fails on a fresh account | Chosen base predates the deploy | Wait until `head - 10 > deployReceiptBlock` |
+| Deposit fails right after funding or approval | Chosen base predates the funding or approval | Wait until `head - 10` is later than both receipt blocks, then check screening |
+| Spend fails on a recently created note | Note is immature or absent at the chosen base | Wait until the note is at least 10 blocks old and visible at that base |
 | `Cannot mix BigInt and other types` | Missing `tip` | Add `tip: 0n` |
 | Revert with `INVALID_PROOF_FACTS` | Passed `proofFacts: []` | Conditional spread |
 | `INVALID_NONCE` on retry | Stale cached pool nonce | `transfers.invalidateProofNonceCache()` first |

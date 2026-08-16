@@ -1,0 +1,4 @@
+interface:
+  display_name: "STRK20 Privacy Router"
+  short_description: "Route STRK20 products and privacy boundaries"
+  default_prompt: "Use $strk20-privacy to choose the correct STRK20 integration route and map its privacy boundary."

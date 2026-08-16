@@ -1,0 +1,4 @@
+interface:
+  display_name: "STRK20 Privacy SDK"
+  short_description: "Build privacy wallets and key-holding backends"
+  default_prompt: "Use $strk20-privacy-sdk to build or debug this key-holding STRK20 wallet or backend flow."

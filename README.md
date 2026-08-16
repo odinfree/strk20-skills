@@ -5,9 +5,11 @@ pool on Starknet. Four skills give a coding agent the working knowledge: how
 the pool works, how a dapp asks a privacy-enabled wallet to act, how to write
 the Cairo adapter for private DeFi, and how to drive the low-level SDK.
 
-Each skill is a distilled `SKILL.md` plus the relevant official documentation
-pages bundled verbatim under `references/`, so the agent quotes source instead
-of paraphrasing from memory.
+Each skill is a distilled `SKILL.md` plus relevant upstream source pages
+bundled verbatim under `references/`, so the agent can open the source instead
+of reconstructing it from memory. The skill body labels source status and
+community examples. Each skill also includes Codex UI metadata under
+`agents/openai.yaml`.
 
 ## Install
 
@@ -21,10 +23,21 @@ Manual install for Claude Code, global:
 
 ```sh
 git clone https://github.com/welttowelt/strk20-skills
-cp -r strk20-skills/skills/* ~/.claude/skills/
+mkdir -p ~/.claude/skills
+cp -R strk20-skills/skills/* ~/.claude/skills/
 ```
 
-For one project only, copy into the repo's `.claude/skills/` instead.
+Manual install for Codex, global:
+
+```sh
+git clone https://github.com/welttowelt/strk20-skills
+mkdir -p ~/.agents/skills
+cp -R strk20-skills/skills/* ~/.agents/skills/
+```
+
+For one project only, copy into the repo's `.claude/skills/` or
+`.agents/skills/` directory instead. The `.agents/skills` paths follow the
+[official Codex skill locations](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills).
 
 ## The skills
 
@@ -39,15 +52,15 @@ For one project only, copy into the repo's `.claude/skills/` instead.
 
 A sample of the load-bearing details, so you know the level:
 
-- The version-pin footgun: STRK20 support lives in `starknet@^10.4.0` on the
-  npm `next` tag, and a bare install silently gets 10.0.x without it.
+- The version boundary: STRK20 support starts at starknet.js 10.4.0. A bare
+  install still gets the npm `latest` line, which does not carry the API.
 - A shield is two transactions (ERC-20 approve first), so the wallet prompts
   twice and the UI should say why.
 - The SDK submission tail: `provingBlockId = currentBlock - 10`, conditional
   `proofFacts` spread, `tip: 0n`.
-- The transparent-state rule: any onchain state a proof reads must be at
-  least 10 blocks old at the proof base, which is why `register()` fails on a
-  freshly deployed account.
+- The proof base must include every prior onchain state change the proof reads.
+  With `provingBlockId = head - 10`, wait until `head - 10 > receiptBlock`
+  before proving against a deployment, funding transfer, or approval.
 - The anonymizer balance-delta idiom, and why helpers approve rather than
   transfer.
 - What stays public on every route: deposits, withdrawals, open-note amounts,
@@ -72,11 +85,16 @@ anything load-bearing against the live docs: every page is raw Markdown when
 you append `.md` to its URL, and the whole site is one file at
 [`/llms-full.txt`](https://strk20-by-example.org/llms-full.txt).
 
+The route-specific skills record the exact package snapshot checked on
+2026-08-16. The Privacy SDK's `latest` tag was `0.14.3-rc.5` on GitHub
+Packages, while the package still returned 404 on public npmjs. Query the
+correct registry when refreshing it. Update and test the starknet.js,
+get-starknet, and Wallet API connection stack as one unit.
+
 ## Sources and license
 
-Content adapted from the official STRK20 documentation
-([strk20-by-example.org](https://strk20-by-example.org)) and the
-[`starkware-libs/starknet-privacy`](https://github.com/starkware-libs/starknet-privacy)
-monorepo. Cairo sources inside the reference pages keep their upstream
-Apache-2.0 attribution. This repository is Apache-2.0 as well. It is a
-community repo, not an official Starkware one.
+Original skill prose and configuration in this repository are Apache-2.0.
+The bundled by-example documentation remains under its upstream MIT license.
+The SDK README and Cairo sources retain their upstream Apache-2.0 terms. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for copyright and license
+details. This is a community repository, not an official Starkware project.
