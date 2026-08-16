@@ -5,10 +5,11 @@ pool on Starknet. Four skills give a coding agent the working knowledge: how
 the pool works, how a dapp asks a privacy-enabled wallet to act, how to write
 the Cairo adapter for private DeFi, and how to drive the low-level SDK.
 
-Each skill is a distilled `SKILL.md` plus the relevant official documentation
-pages bundled verbatim under `references/`, so the agent can open the source
-instead of reconstructing it from memory. Each skill also includes Codex UI
-metadata under `agents/openai.yaml`.
+Each skill is a distilled `SKILL.md` plus relevant upstream source pages
+bundled verbatim under `references/`, so the agent can open the source instead
+of reconstructing it from memory. The skill body labels source status and
+community examples. Each skill also includes Codex UI metadata under
+`agents/openai.yaml`.
 
 ## Install
 
@@ -22,18 +23,21 @@ Manual install for Claude Code, global:
 
 ```sh
 git clone https://github.com/welttowelt/strk20-skills
-cp -r strk20-skills/skills/* ~/.claude/skills/
+mkdir -p ~/.claude/skills
+cp -R strk20-skills/skills/* ~/.claude/skills/
 ```
 
 Manual install for Codex, global:
 
 ```sh
 git clone https://github.com/welttowelt/strk20-skills
-cp -r strk20-skills/skills/* ~/.codex/skills/
+mkdir -p ~/.agents/skills
+cp -R strk20-skills/skills/* ~/.agents/skills/
 ```
 
 For one project only, copy into the repo's `.claude/skills/` or
-`.codex/skills/` directory instead.
+`.agents/skills/` directory instead. The `.agents/skills` paths follow the
+[official Codex skill locations](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills).
 
 ## The skills
 
@@ -54,9 +58,9 @@ A sample of the load-bearing details, so you know the level:
   twice and the UI should say why.
 - The SDK submission tail: `provingBlockId = currentBlock - 10`, conditional
   `proofFacts` spread, `tip: 0n`.
-- The transparent-state rule: any onchain state a proof reads must be at
-  least 10 blocks old at the proof base, which is why `register()` fails on a
-  freshly deployed account.
+- The proof base must include every prior onchain state change the proof reads.
+  With `provingBlockId = head - 10`, wait until `head - 10 > receiptBlock`
+  before proving against a deployment, funding transfer, or approval.
 - The anonymizer balance-delta idiom, and why helpers approve rather than
   transfer.
 - What stays public on every route: deposits, withdrawals, open-note amounts,
@@ -81,12 +85,11 @@ anything load-bearing against the live docs: every page is raw Markdown when
 you append `.md` to its URL, and the whole site is one file at
 [`/llms-full.txt`](https://strk20-by-example.org/llms-full.txt).
 
-Live registry check on 2026-08-16: starknet.js `latest` was `10.0.2` and
-`next` was `10.7.0`. get-starknet v6 `next` was `6.0.4`. The Privacy SDK
-`latest` was `0.14.3-rc.5`, and Wallet API types remained `0.10.3`. Treat the
-documented 10.4.0 plus get-starknet 6.0.3 combination as a tested baseline.
-If you move to the current `next` packages, update and test the connection
-stack as one unit.
+The route-specific skills record the exact package snapshot checked on
+2026-08-16. The Privacy SDK's `latest` tag was `0.14.3-rc.5` on GitHub
+Packages, while the package still returned 404 on public npmjs. Query the
+correct registry when refreshing it. Update and test the starknet.js,
+get-starknet, and Wallet API connection stack as one unit.
 
 ## Sources and license
 

@@ -124,7 +124,7 @@ Swapping is the one DeFi action that needs no helper of your own. AVNU
 deployed its executor.
 
 ```ts
-// npm install @avnu/avnu-sdk@^4.2.0 starknet@^10.4.0
+// npm install @avnu/avnu-sdk@^4.2.0 starknet@10.4.0
 import { createStrk20WalletProver, executePrivateSwap, PRIVACY_POOL_ADDRESS } from "@avnu/avnu-sdk"
 
 const prover = createStrk20WalletProver(walletAccount)

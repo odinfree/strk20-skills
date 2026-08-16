@@ -128,9 +128,10 @@ or write:
   Braavos and embedded-wallet providers are not privacy-enabled in the cited
   integration sources.
 - Private sub-accounts: the SDK route was introduced in Privacy SDK
-  `0.14.3-rc.4`. The npm `latest` tag was `0.14.3-rc.5` on 2026-08-16
-  (`transfers.build().subaccounts(dappName).invoke(...)`, backed by the
-  `sub_account_anonymizer` package). The package is a release candidate, so
+  `0.14.3-rc.4`. The GitHub Packages `latest` tag was `0.14.3-rc.5` on
+  2026-08-16, while public npmjs still returned 404. The SDK route uses
+  `transfers.build().subaccounts(dappName).invoke(...)` and the
+  `sub_account_anonymizer` package. The package is a release candidate, so
   confirm audit readiness before shipping on it. The Wallet API route is
   pending. No sub-account method exists in `@starknet-io/types-js` 0.10.3 or
   starknet.js, so dapps relying on the user's wallet must wait.
