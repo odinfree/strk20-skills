@@ -1,0 +1,4 @@
+interface:
+  display_name: "STRK20 Anonymizer Contracts"
+  short_description: "Design and audit privacy_invoke helpers"
+  default_prompt: "Use $strk20-anonymizer-contracts to design or audit this STRK20 privacy_invoke helper contract."

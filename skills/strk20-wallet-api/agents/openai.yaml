@@ -1,0 +1,4 @@
+interface:
+  display_name: "STRK20 Wallet API"
+  short_description: "Build private dapps through Starknet wallets"
+  default_prompt: "Use $strk20-wallet-api to design or implement a private dapp through the Starknet Wallet API."

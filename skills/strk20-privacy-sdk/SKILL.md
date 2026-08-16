@@ -1,6 +1,6 @@
 ---
 name: strk20-privacy-sdk
-description: Build privacy wallets and key-holding backends with the Starknet Privacy SDK (@starkware-libs/starknet-privacy-sdk). Covers createPrivateTransfers wiring, register, deposit, transfer, withdraw, multi-op batches, private sub-accounts, note discovery, setup requirements, and proving configuration. Also for debugging SDK submissions: provingBlockId, proofFacts, tip 0n, INVALID_NONCE, note maturity, fresh-account sequencing, AddressMap lookups. If the app talks to the user's wallet instead of holding keys, use strk20-wallet-api. For concepts use strk20-privacy.
+description: "Build privacy wallets and key-holding backends with the Starknet Privacy SDK (@starkware-libs/starknet-privacy-sdk). Covers createPrivateTransfers wiring, register, deposit, transfer, withdraw, multi-op batches, private sub-accounts, note discovery, setup requirements, and proving configuration. Also use for debugging SDK submissions: provingBlockId, proofFacts, tip 0n, INVALID_NONCE, note maturity, fresh-account sequencing, and AddressMap lookups. If the app talks to the user's wallet instead of holding keys, use strk20-wallet-api. For concepts use strk20-privacy."
 ---
 
 # STRK20 Privacy SDK: wallets and key-holding backends
@@ -135,7 +135,8 @@ Concretely:
   limits, so fall back to per-recipient transactions, waiting out change-note
   maturity between them.
 - **sub-accounts**: `transfers.build().subaccounts(dappName).invoke(...)`,
-  available as of `0.14.3-rc.4` (`sub_account_anonymizer` package). It needs
+  introduced in `0.14.3-rc.4` (`sub_account_anonymizer` package). npm
+  `latest` was `0.14.3-rc.5` on 2026-08-16. It needs
   the `subAccountAnonymizerAddress` field in the `createPrivateTransfers`
   config, and calling `subaccounts(...)` without it throws. `identify()` and
   `deployed()` are declared but not yet implemented. This is a release

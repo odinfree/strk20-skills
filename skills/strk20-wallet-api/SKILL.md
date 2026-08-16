@@ -13,19 +13,23 @@ ask a user for their viewing key.
 Full doc pages sit in `references/`. The snippets below are the load-bearing
 parts.
 
-## Version pins. Check these FIRST (the #1 footgun)
+## Version baseline. Verify before installing
 
-- `npm install starknet@^10.4.0`. STRK20 support landed in starknet.js 10.4.0
-  and ships on the npm `next` tag. A bare `npm install starknet` resolves to
-  `latest` (still 10.0.x) where `WalletAccountV6`, `strk20InvokeTransaction`,
-  and `STRK20_ACTION` are all missing.
+- STRK20 support landed in starknet.js 10.4.0. A bare `npm install starknet`
+  resolves to the `latest` line, which was 10.0.2 on 2026-08-16 and lacks
+  `WalletAccountV6`, `strk20InvokeTransaction`, and `STRK20_ACTION`.
 - Existing repo on starknet.js v5, v6, or v7? The jump to 10.4.0 is a breaking
   migration, plan it as its own task before wiring STRK20.
 - The connected wallet must support Wallet API `>= 0.10.3` (types from
   `@starknet-io/types-js` 0.10.3).
-- Connection layer, pinned explicitly (npm `next` tag, per the official
-  agent-skill repo): `@starknet-io/get-starknet-discovery@6.0.3` and
-  `@starknet-io/get-starknet-wallet-standard@6.0.3`.
+- The official integration skill tested an exact stack: `starknet@10.4.0`,
+  `@starknet-io/get-starknet-discovery@6.0.3`,
+  `@starknet-io/get-starknet-wallet-standard@6.0.3`, and
+  `@starknet-io/types-js@0.10.3`.
+- The npm `next` tags had advanced to starknet.js 10.7.0 and get-starknet
+  6.0.4 on 2026-08-16. Do not combine a floating `starknet@^10.4.0` with
+  stale hard pins. Either use the tested exact stack or update the connection
+  packages together and rerun the WalletAccount guide and wallet tests.
 - Wrapper layers: Starkzap's docs do not list STRK20 support, and
   starknet-react or starknetkit may lag starknet.js 10.4.0. Verify current
   compatibility on npm before promising a drop-in. Either way the plug-in
@@ -175,6 +179,6 @@ live demo at starknet-privacy-starter.vercel.app).
 - `starknet-wallet-api__avnu-private-swaps.md`, AVNU SDK swap route
 - `app__tip-jar.md`, worked example of adding a private path to a live app
 
-Snapshot 2026-08-16. Versions and wallet support move. Verify against
-https://strk20-by-example.org (append `.md` to any page for raw Markdown)
-before launch.
+Snapshot and npm registry check 2026-08-16. Versions and wallet support move.
+Verify against https://strk20-by-example.org (append `.md` to any page for raw
+Markdown) before launch.

@@ -35,6 +35,15 @@ API flow and an app-specific anonymizer contract, and check for a first-party
 private path before routing anyone to an anonymizer: AVNU ships private swaps,
 so that flow needs no Cairo of your own.
 
+## Map the trust boundary before coding
+
+For the selected route, state who holds the signing key and viewing key, who
+discovers notes, who constructs the private action, who proves it, and who
+submits it. Name the wallet, RPC, relayer, prover, screening service, and app
+operators that can observe the request. End with a hidden-versus-visible table
+and list the wallet versions, package versions, addresses, audits, and network
+assumptions that still need live verification.
+
 ## The mental model, one screen
 
 - **Note**: an immutable record of (owner, token, u128 amount), stored
@@ -112,10 +121,14 @@ or write:
 
 ## Route status (snapshot 2026-08-16, verify before relying on it)
 
-- Wallet API version 0.10.3. Wallet scope today is Ready (extension, current)
-  and Xverse (in progress), per the official agent-skill repo. Braavos and
-  embedded-wallet providers are not privacy-enabled.
-- Private sub-accounts: the SDK route ships as of Privacy SDK `0.14.3-rc.4`
+- Wallet API version 0.10.3. The official integration skill uses Ready as the
+  tested dapp baseline and still marks Xverse's dapp-facing Wallet API in
+  progress. Product docs also list Xverse for user privacy flows, so detect
+  the connected wallet's capability instead of inferring it from the brand.
+  Braavos and embedded-wallet providers are not privacy-enabled in the cited
+  integration sources.
+- Private sub-accounts: the SDK route was introduced in Privacy SDK
+  `0.14.3-rc.4`. The npm `latest` tag was `0.14.3-rc.5` on 2026-08-16
   (`transfers.build().subaccounts(dappName).invoke(...)`, backed by the
   `sub_account_anonymizer` package). The package is a release candidate, so
   confirm audit readiness before shipping on it. The Wallet API route is
