@@ -64,8 +64,9 @@ A sample of the load-bearing details, so you know the level:
 
 - The version boundary: STRK20 support starts at starknet.js 10.4.0. A bare
   install still gets the npm `latest` line, which does not carry the API.
-- A shield is two transactions (ERC-20 approve first), so the wallet prompts
-  twice and the UI should say why.
+- A shield needs an ERC-20 approve, and approve must execute as the token
+  owner — which does not force a second transaction, since a paymaster can
+  carry it as a signed outside execution.
 - The SDK submission tail: `provingBlockId = currentBlock - 10`, conditional
   `proofFacts` spread, `tip: 0n`.
 - The RC.5 shadow-account rename, including the new builder, config key,

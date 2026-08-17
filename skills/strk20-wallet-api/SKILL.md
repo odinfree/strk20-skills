@@ -87,9 +87,12 @@ Two submission details prevent silent UI failures:
   `BigInt(left) === BigInt(right)`, since padded and unpadded hexadecimal
   strings can name the same token or account.
 
-- A shield is two transactions: the ERC-20 `approve` must land onchain before
-  the private deposit, so the wallet prompts twice. Label both steps in the
-  UI, or the second prompt reads as a duplicate-transaction bug.
+- A shield needs an ERC-20 `approve`, and `approve` must execute as the token
+  owner. That does not force two transactions: under a paymaster the approve
+  is authorized by `signMessage` as an outside execution and rides the same
+  transaction as the deposit (`invoke_and_apply_action`). Whether a given
+  wallet surfaces one prompt or two is a wallet implementation detail — check
+  the wallet you target rather than assuming, and label each step you do show.
 - Private transfers run between registered pool users. The wallet registers
   the sender automatically on first use, but the recipient must also be
   registered, and only they can do it. Design recipient-onboarding UX, and for
