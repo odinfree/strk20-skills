@@ -54,6 +54,13 @@ Do not probe `strk20Balances` to feature-detect. It is a balance-reading
 method, so wallets gate it behind a user consent prompt for data the app has
 no reason to see.
 
+Import the connected-wallet type from its exported feature subpath. Importing
+it from the package root fails with TS2459:
+
+```ts
+import type { WalletWithStarknetFeatures } from "@starknet-io/get-starknet-wallet-standard/features"
+```
+
 ## The actions
 
 Build a `STRK20_ACTION[]` and hand it to the wallet:
@@ -69,6 +76,16 @@ const actions: STRK20_ACTION[] = [
 
 const { transaction_hash } = await account.strk20InvokeTransaction(actions)
 ```
+
+Two submission details prevent silent UI failures:
+
+- Bound `waitForTransaction` with an application timeout. Paymaster-relayed
+  hashes can take time to appear at the selected RPC. A timeout means
+  "submitted, confirmation not visible yet", so keep the explorer link and
+  let the UI resume polling.
+- Normalize felt addresses before comparison. Compare
+  `BigInt(left) === BigInt(right)`, since padded and unpadded hexadecimal
+  strings can name the same token or account.
 
 - A shield is two transactions: the ERC-20 `approve` must land onchain before
   the private deposit, so the wallet prompts twice. Label both steps in the

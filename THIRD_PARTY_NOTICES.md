@@ -50,3 +50,6 @@ which is licensed under Apache-2.0.
 Facts attributed to the official integration skill come from
 [starkience/strk20-agent-skills](https://github.com/starkience/strk20-agent-skills),
 which is licensed under Apache-2.0.
+
+`skills/strk20-privacy/scripts/check_freshness.py` is adapted from that
+repository's Apache-2.0 freshness checker.

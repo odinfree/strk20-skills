@@ -1,6 +1,6 @@
 ---
 name: strk20-privacy
-description: Router and mental model for STRK20, the Starknet privacy pool. Use when choosing an integration route, answering questions about how STRK20 works (notes, nullifiers, viewing keys, channels, actions, proofs, deposit screening), stating what is hidden vs public, handling compliance and auditing questions, or mapping the ecosystem (private sub-accounts, the EVM Privacy Bridge, starter kit, RFPs, incubator, brand kit). Implementation work fires the sibling skills directly, strk20-wallet-api for private dapps in TS/React, strk20-anonymizer-contracts for Cairo helpers, strk20-privacy-sdk for wallets and key-holding backends.
+description: Router and mental model for STRK20, the Starknet privacy pool. Use when choosing an integration route, answering questions about how STRK20 works (notes, nullifiers, viewing keys, channels, actions, proofs, deposit screening), stating what is hidden vs public, handling compliance and auditing questions, or mapping the ecosystem (shadow accounts, formerly private sub-accounts, the EVM Privacy Bridge, starter kit, RFPs, incubator, brand kit). Implementation work fires the sibling skills directly, strk20-wallet-api for private dapps in TS/React, strk20-anonymizer-contracts for Cairo helpers, strk20-privacy-sdk for wallets and key-holding backends.
 ---
 
 # STRK20, Starknet privacy: router and mental model
@@ -24,7 +24,7 @@ shape), open the reference page.
 | The Cairo adapter a private DeFi flow calls | Anonymizer contract (`privacy_invoke`) | `strk20-anonymizer-contracts` |
 | A privacy wallet, or a backend holding its own keys | Privacy SDK (`createPrivateTransfers`) | `strk20-privacy-sdk` |
 | Embedded-wallet or AA product (Privy, Cartridge, chipi, cavos, Dynamic) | These manage user keys and are not privacy-enabled today. Treat the product as the key-holder and take the SDK route | `strk20-privacy-sdk` |
-| Hide the main-wallet link during account-based app activity | Private sub-accounts. SDK route shipped, Wallet API route pending | `strk20-privacy-sdk` |
+| Hide the main-wallet link during account-based app activity | Shadow accounts, called private sub-accounts before SDK RC.5. SDK route shipped, Wallet API route pending | `strk20-privacy-sdk` |
 | Fund from or withdraw to an EVM wallet (USDC) | Privacy Bridge over Circle CCTP | see Ecosystem below |
 | Operate proof generation yourself | Prover backend, screening still applies | `strk20-privacy-sdk` |
 
@@ -127,14 +127,16 @@ or write:
   the connected wallet's capability instead of inferring it from the brand.
   Braavos and embedded-wallet providers are not privacy-enabled in the cited
   integration sources.
-- Private sub-accounts: the SDK route was introduced in Privacy SDK
-  `0.14.3-rc.4`. The GitHub Packages `latest` tag was `0.14.3-rc.5` on
-  2026-08-16, while public npmjs still returned 404. The SDK route uses
-  `transfers.build().subaccounts(dappName).invoke(...)` and the
-  `sub_account_anonymizer` package. The package is a release candidate, so
-  confirm audit readiness before shipping on it. The Wallet API route is
-  pending. No sub-account method exists in `@starknet-io/types-js` 0.10.3 or
-  starknet.js, so dapps relying on the user's wallet must wait.
+- Shadow accounts, called private sub-accounts in RC.4 and older docs, hide the
+  main-wallet link during account activity. Privacy SDK `0.14.3-rc.5` renamed
+  the builder to `build().shadowAccounts(dappName)`, the config key to
+  `shadowAccountAnonymizerAddress`, and the Cairo package to
+  `shadow_account_anonymizer`. The renamed views and event use new selectors,
+  so RC.5 requires the upgraded anonymizer and an indexer spanning the upgrade
+  must match both event keys. The Wallet API route remains pending. No shadow
+  account method exists in `@starknet-io/types-js` 0.10.3 or starknet.js, so
+  dapps relying on the user's wallet must wait. This is still a release
+  candidate. Confirm its current API and audit readiness before shipping.
 - Privacy Bridge (EVM USDC to and from the pool over Circle CCTP) is open
   source and early. Read its README before planning around it.
 - The docs' own launch checklist: verify wallet support, API versions,
@@ -156,6 +158,21 @@ or write:
 - Request for Startups: https://strk20.starknet.io/rfp (26 open problem
   statements). Incubator: https://proof.starknet.io. Brand kit:
   https://strk20.starknet.io/brand.md plus `/brand/tokens.json`.
+
+## Refresh fast-moving facts
+
+Run the bundled checker from this skill directory before quoting a version,
+package path, Wallet API status, or pool address:
+
+```sh
+python3 scripts/check_freshness.py
+```
+
+Add `--quick` to skip the 30 per-page liveness requests. Exit code 1 means a
+checked fact moved. Exit code 2 means a lookup failed and the result is
+incomplete. The checker is adapted from the official integration skill. It
+cannot verify wallet rollout or contract audit status, so check those sources
+manually.
 
 ## references/
 

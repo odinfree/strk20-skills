@@ -68,6 +68,8 @@ A sample of the load-bearing details, so you know the level:
   twice and the UI should say why.
 - The SDK submission tail: `provingBlockId = currentBlock - 10`, conditional
   `proofFacts` spread, `tip: 0n`.
+- The RC.5 shadow-account rename, including the new builder, config key,
+  Cairo package, and event-key migration warning.
 - The proof base must include every prior onchain state change the proof reads.
   With `provingBlockId = head - 10`, wait until `head - 10 > receiptBlock`
   before proving against a deployment, funding transfer, or approval.
@@ -75,6 +77,8 @@ A sample of the load-bearing details, so you know the level:
   transfer.
 - What stays public on every route: deposits, withdrawals, open-note amounts,
   timing.
+- A bundled freshness checker for npm tags, monorepo paths, the Wallet API
+  development version, the Sepolia pool address, and all 30 tutorial pages.
 
 ## Relationship to the official agent skill
 

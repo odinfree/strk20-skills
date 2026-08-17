@@ -1,6 +1,6 @@
 ---
 name: strk20-privacy-sdk
-description: "Build privacy wallets and key-holding backends with the Starknet Privacy SDK (@starkware-libs/starknet-privacy-sdk). Covers createPrivateTransfers wiring, register, deposit, transfer, withdraw, multi-op batches, private sub-accounts, note discovery, setup requirements, and proving configuration. Also use for debugging SDK submissions: provingBlockId, proofFacts, tip 0n, INVALID_NONCE, note maturity, fresh-account sequencing, and AddressMap lookups. If the app talks to the user's wallet instead of holding keys, use strk20-wallet-api. For concepts use strk20-privacy."
+description: "Build privacy wallets and key-holding backends with the Starknet Privacy SDK (@starkware-libs/starknet-privacy-sdk). Covers createPrivateTransfers wiring, register, deposit, transfer, withdraw, multi-op batches, shadow accounts (formerly private sub-accounts), note discovery, setup requirements, and proving configuration. Also use for debugging SDK submissions: provingBlockId, proofFacts, tip 0n, INVALID_NONCE, note maturity, fresh-account sequencing, and AddressMap lookups. If the app talks to the user's wallet instead of holding keys, use strk20-wallet-api. For concepts use strk20-privacy."
 ---
 
 # STRK20 Privacy SDK: wallets and key-holding backends
@@ -144,15 +144,16 @@ condition above so the selected base includes the approval.
   `invoke()` per transaction. Very large recipient lists can hit proof-size
   limits, so fall back to per-recipient transactions, waiting out change-note
   maturity between them.
-- **sub-accounts**: `transfers.build().subaccounts(dappName).invoke(...)`,
-  introduced in `0.14.3-rc.4` (`sub_account_anonymizer` package). GitHub
-  Packages `latest` was `0.14.3-rc.5` on 2026-08-16, while public npmjs still
-  returned 404. It needs
-  the `subAccountAnonymizerAddress` field in the `createPrivateTransfers`
-  config, and calling `subaccounts(...)` without it throws. `identify()` and
-  `deployed()` are declared but not yet implemented, per the official
-  agent-skill repo. Treat this release candidate as an API for teams that
-  control their own accounts and can confirm its current audit readiness.
+- **shadow accounts**, called sub-accounts in RC.4: SDK `0.14.3-rc.5` uses
+  `transfers.build().shadowAccounts(dappName).invoke(...)`, the
+  `shadowAccountAnonymizerAddress` config field, and the
+  `shadow_account_anonymizer` Cairo package. Do not mix the RC.4 and RC.5
+  names. RC.5 renamed the views and deployment event, which changed their
+  selectors and keys. It requires the upgraded anonymizer. Indexers reading
+  across the upgrade must match both the historical `SubAccountDeployed` and
+  current `ShadowAccountDeployed` keys. Treat this release candidate as an API
+  for teams that control their own accounts and can confirm its current audit
+  readiness.
 
 ## Setup requirements before transferring
 
@@ -214,7 +215,7 @@ Telegram (t.me/sncorestars).
 | `INVALID_NONCE` on retry | Stale cached pool nonce | `transfers.invalidateProofNonceCache()` first |
 | Recipient's notes never decrypt | Viewing key passed as hex string | `BigInt(...)`, range `[1, MAX_VIEWING_KEY]` |
 | `notes.get(token)` returns undefined | String key on `AddressMap` | Key by `BigInt(token)` |
-| `subaccounts(...)` throws | `subAccountAnonymizerAddress` missing from config | Add it to `createPrivateTransfers` |
+| `shadowAccounts(...)` throws | `shadowAccountAnonymizerAddress` missing from config | Add it to `createPrivateTransfers` |
 | Mature-looking deposit still reverts | Screening signature missing or failed | Check the FPI screening path |
 
 ## references/
