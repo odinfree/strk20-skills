@@ -123,11 +123,15 @@ condition above so the selected base includes the approval.
   public viewing key and stores the auditor-encrypted private key.
   Registering twice reverts. `build({ autoRegister: true })` bundles
   registration into any first operation and no-ops if already registered.
-- **deposit**: TWO transactions, never one. The ERC-20 `approve` of the pool
-  must land first, because `apply_actions` is reentrancy-guarded against
-  sharing a transaction. Then `.with(token, t => t.deposit({ amount }))` with
-  `surplusTo(me)`. `autoSetup: true` opens the self-channel and token
-  subchannel a first deposit needs.
+- **deposit**: the pool pulls with `transfer_from`, so it needs an ERC-20
+  `approve` from the token owner. `approve` must execute *as the user*, so on
+  the plain SDK route it is the user's own transaction, submitted first; under
+  a paymaster the executing account is the paymaster, not the user, and the
+  approve rides the paymaster's user-signed outside execution
+  (`invoke_and_apply_action`) in the same transaction as the deposit. Then
+  `.with(token, t => t.deposit({ amount }))` with `surplusTo(me)`.
+  `autoSetup: true` opens the self-channel and token subchannel a first
+  deposit needs.
 - **transfer**: `.inputs(note)` picks notes, or `autoSelectNotes: "naive"`
   (smallest covering set) or `"all"` (consolidation). `surplusTo(...)` is
   REQUIRED whenever inputs may exceed outputs, else `execute()` throws

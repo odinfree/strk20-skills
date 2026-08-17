@@ -5,9 +5,9 @@ Source: https://strk20-by-example.org/sdk/deposit
 > Approve the pool, then deposit public ERC-20 tokens into a private note
 
 A deposit moves public ERC-20 tokens into the pool and mints a private note.
-The pool pulls tokens with `transfer_from` while the proof executes, so the
-ERC-20 `approve` must already be visible on-chain - it is a **separate
-transaction**, submitted and waited on first.
+The pool pulls the tokens with `transfer_from`, so it needs an ERC-20 allowance
+from you. In the flow below the `approve` is its own transaction, submitted and
+waited on first.
 
 Snippets assume `transfers`, `account` and `provider` from
 [Getting Started](/sdk/getting-started).
@@ -48,9 +48,6 @@ await provider.waitForTransaction(tx.transaction_hash)
 
 ## Things to notice
 
-- **Two transactions, never one.** The pool's `apply_actions` entrypoint is
-  reentrancy-guarded against sharing a transaction with other calls, so you
-  cannot batch `approve` and the deposit into a single `account.execute`.
 - The deposit omits `recipient`; `surplusTo(account.address)` directs the
   unassigned amount into a note owned by you. This is the shape that scales
   to deposit-and-transfer on the next page.
