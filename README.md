@@ -78,7 +78,9 @@ A sample of the load-bearing details, so you know the level:
 
 ## Relationship to the official agent skill
 
-[`starkience/strk20-agent-skills`](https://github.com/starkience/strk20-agent-skills)
+The [`STRK20 Integration Agent Skill`](https://strk20-by-example.org/agent-skill),
+maintained in
+[`starkience/strk20-agent-skills`](https://github.com/starkience/strk20-agent-skills),
 is the official integration planner. It scans your repo, interviews you,
 writes `STRK20_INTEGRATION_PLAN.md`, and executes it phase by phase. The four
 skills here are the knowledge layer underneath: concepts, API surfaces, and
@@ -94,6 +96,10 @@ in the text. Versions, wallet support, and feature status change. Verify
 anything load-bearing against the live docs: every page is raw Markdown when
 you append `.md` to its URL, and the whole site is one file at
 [`/llms-full.txt`](https://strk20-by-example.org/llms-full.txt).
+
+The bundled `skills/strk20-privacy/references/agent-skill.md` is a verbatim
+snapshot of the STRK20 Integration Agent Skill page, with a source header
+added for provenance.
 
 The route-specific skills record the exact package snapshot checked on
 2026-08-16. The Privacy SDK's `latest` tag was `0.14.3-rc.5` on GitHub

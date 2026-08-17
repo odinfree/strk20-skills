@@ -10,6 +10,10 @@ The reference pages copied from
 [Akashneelesh/strk20-by-example](https://github.com/Akashneelesh/strk20-by-example)
 are licensed under the MIT License.
 
+This includes the bundled snapshot of the
+[STRK20 Integration Agent Skill page](https://strk20-by-example.org/agent-skill)
+at `skills/strk20-privacy/references/agent-skill.md`.
+
 ```text
 MIT License
 
