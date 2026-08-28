@@ -145,15 +145,19 @@ condition above so the selected base includes the approval.
   limits, so fall back to per-recipient transactions, waiting out change-note
   maturity between them.
 - **shadow accounts**, called sub-accounts in RC.4: SDK `0.14.3-rc.5` uses
-  `transfers.build().shadowAccounts(dappName).invoke(...)`, the
+  `transfers.build().shadowAccounts(dappName).invoke(nonce, ...)`, the
   `shadowAccountAnonymizerAddress` config field, and the
-  `shadow_account_anonymizer` Cairo package. Do not mix the RC.4 and RC.5
-  names. RC.5 renamed the views and deployment event, which changed their
-  selectors and keys. It requires the upgraded anonymizer. Indexers reading
-  across the upgrade must match both the historical `SubAccountDeployed` and
-  current `ShadowAccountDeployed` keys. Treat this release candidate as an API
-  for teams that control their own accounts and can confirm its current audit
-  readiness.
+  `shadow_account_anonymizer` Cairo package. The account is deterministic for
+  `(user, dappName, nonce)`. Increment the nonce for a fresh account. Reusing
+  it reuses the same public account and links its activity. The account hides
+  the direct main-wallet link, not its calls, balances, positions, events, or
+  timing. Read `references/shadow-accounts.md` before designing this route.
+  RC.5 renamed the views and deployment event, which changed their selectors
+  and keys. It requires the upgraded anonymizer. Indexers reading across the
+  upgrade must match both the historical `SubAccountDeployed` and current
+  `ShadowAccountDeployed` keys. Treat this release candidate as an API for
+  teams that control their own accounts and can confirm its current audit and
+  deployment status.
 
 ## Setup requirements before transferring
 
@@ -231,8 +235,10 @@ Telegram (t.me/sncorestars).
 - `sdk__note-discovery.md`, discoverNotes, AddressMap, registry
 - `sdk__discovery-providers.md`, Indexer vs Contract provider status
 - `sdk__proving-config.md`, provingBlockId, proofDetails, retries
+- `shadow-accounts.md`, privacy boundary, nonce model, DeFi patterns, APIs,
+  test evidence
 - `starknet-privacy-sdk-README.md`, upstream monorepo SDK README
 
-Snapshot 2026-08-16. Package status, exports, and addresses move. Verify
+Snapshot 2026-08-28. Package status, exports, and addresses move. Verify
 against https://strk20-by-example.org and `starkware-libs/starknet-privacy`
 before relying on them.

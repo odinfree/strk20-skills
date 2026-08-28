@@ -28,7 +28,7 @@ The output lands in an open note. Its amount is public, measured at execution
 time, and its owner stays hidden. Everything happens in one transaction. A
 revert anywhere aborts the whole pool transaction and no funds move.
 
-## The contract surface
+## The contract interface
 
 The pool deserializes calldata directly into `privacy_invoke`'s parameters and
 deserializes the return as:
@@ -69,7 +69,7 @@ You design the signature. The shipped examples conventionally lead with an
 
 | Helper | Provenance | What it teaches |
 | --- | --- | --- |
-| EchoHelper | official monorepo test contract | The minimal surface: calldata in, span out |
+| EchoHelper | official monorepo test contract | The minimal interface: calldata in, span out |
 | SwapHelper | official monorepo mock (`mock_swap_executor`) | The tutorial DEX template: AMM address and selector pinned at deployment, generic `call_contract_syscall`, balance delta, `u256→u128` overflow guard, `ZERO_OUT_AMOUNT` guard |
 | Ekubo swap anonymizer | official reference package (`packages/ekubo_swap_anonymizer`) | The production-grade DEX reference: single-hop Ekubo swap, full-swap-only. Study it when adapting the mock template to a live AMM |
 | VesuLendingHelper | official reference package (`vesu_lending_anonymizer`) | ERC-4626/SNIP-22 vaults: deposit and withdraw through one entry point via token roles, stateless and permissionless (approves whoever called, holds nothing across transactions), shares return value ignored in favor of the delta. Reference example only: adoption stays with the app team and the integration is in progress |

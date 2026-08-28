@@ -1,6 +1,6 @@
 ---
 name: strk20-wallet-api
-description: Build private dapps on Starknet through the Starknet Wallet API. Covers shield/unshield, private transfers, shielded balances, private DeFi calls, and AVNU private swaps from TypeScript or React. Use whenever an app asks the user's privacy-enabled wallet to perform STRK20 actions (starknet.js WalletAccountV6, useStrk20 hooks, strk20InvokeTransaction, STRK20_ACTION, open notes, openNoteIds placeholders). For the Cairo helper side use strk20-anonymizer-contracts, for wallets or backends holding their own keys use strk20-privacy-sdk, for concepts and route choice use strk20-privacy.
+description: Build private dapps on Starknet through the Starknet Wallet API. Covers shield/unshield, private transfers, shielded balances, private DeFi calls, shadow-account actions, and AVNU private swaps from TypeScript or React. Use whenever an app asks the user's privacy-enabled wallet to perform STRK20 actions (starknet.js WalletAccountV6, useStrk20 hooks, strk20InvokeTransaction, STRK20_ACTION, open notes, openNoteIds placeholders). For the Cairo helper side use strk20-anonymizer-contracts, for wallets or backends holding their own keys use strk20-privacy-sdk, for concepts and route choice use strk20-privacy.
 ---
 
 # STRK20 Wallet API: private dapps
@@ -26,10 +26,14 @@ parts.
   `@starknet-io/get-starknet-discovery@6.0.3`,
   `@starknet-io/get-starknet-wallet-standard@6.0.3`, and
   `@starknet-io/types-js@0.10.3`.
-- The npm `next` tags had advanced to starknet.js 10.7.0 and get-starknet
-  6.0.4 on 2026-08-16. Do not combine a floating `starknet@^10.4.0` with
+- The npm `next` tags had advanced to starknet.js 10.7.1 and get-starknet
+  6.0.5 on 2026-08-28. Do not combine a floating `starknet@^10.4.0` with
   stale hard pins. Either use the tested exact stack or update the connection
   packages together and rerun the WalletAccount guide and wallet tests.
+- Shadow accounts have a separate prerelease gate. Wallet API 0.10.4-rc.1,
+  `@starknet-io/types-js@0.10.4-beta.2`, and `starknet@10.7.1` on npm `next`
+  include the action and commitment method. Stable types-js 0.10.3 does not.
+  A library upgrade does not add support to the connected wallet.
 - Wrapper layers: Starkzap's docs do not list STRK20 support, and
   starknet-react or starknetkit may lag starknet.js 10.4.0. Verify current
   compatibility on npm before promising a drop-in. Either way the plug-in
@@ -86,6 +90,54 @@ Two submission details prevent silent UI failures:
 - Normalize felt addresses before comparison. Compare
   `BigInt(left) === BigInt(right)`, since padded and unpadded hexadecimal
   strings can name the same token or account.
+
+## Shadow accounts are prerelease wallet functionality
+
+Shadow accounts let one user derive a deterministic Starknet account for each
+`(dappName, nonce)` pair. Use a new nonce for a fresh account. Reusing a nonce
+reuses the address and links its public activity.
+
+```ts
+import type {
+  STRK20_ACTION,
+  STRK20_SHADOW_ACCOUNT_INVOKE_ACTION,
+} from "starknet"
+
+const shadowAction: STRK20_SHADOW_ACCOUNT_INVOKE_ACTION = {
+  type: "shadow_account_invoke",
+  dapp_name: "myDapp",
+  nonce: "0x0",
+  calls: [dappContract.populate("stake", { amount: 1_000n })],
+  collect_policy: { type: "diff" },
+}
+
+const actions: STRK20_ACTION[] = [
+  { type: "transfer", token: rewardToken, amount: "OPEN", recipient: userAddress },
+  shadowAction,
+]
+
+const commitment = await account.strk20ShadowAccountCommitment("myDapp", "0x0")
+```
+
+The commitment call is local and sends no transaction. Omit the nonce to get
+the partial commitment shared by every shadow account for that user and dapp.
+Publishing it lets the dapp recognize that group, which intentionally links
+the accounts within that dapp context.
+
+Collection policy controls how much returns to each open note: `all` collects
+the full token balance, `diff` collects only the gain from this interaction,
+and `exact` collects a specified amount. One policy applies to every open note
+settled by the action.
+
+Capability-check the connected wallet before rendering this flow. Do not infer
+support from starknet.js alone. The general 0.10.3 check above is insufficient
+for shadow accounts. Require `supportedWalletApi()` to advertise the
+0.10.4-rc.1 shadow-account schema or a compatible later version, then handle
+an unsupported-method response from the commitment or invoke call. The account
+hides the direct link to the main wallet. Its address, calls, balances,
+positions, events, and timing remain public. Read the `strk20-privacy-sdk`
+skill's
+`references/shadow-accounts.md` before launch.
 
 - A shield is two transactions: the ERC-20 `approve` must land onchain before
   the private deposit, so the wallet prompts twice. Label both steps in the
@@ -149,7 +201,7 @@ const { transactionHash } = await executePrivateSwap({
   quote,                       // from AVNU's quote endpoint
   slippage: 0.01,
   takerAddress: walletAccount.address,
-  poolAddress: PRIVACY_POOL_ADDRESS, // mainnet; SEPOLIA_PRIVACY_POOL_ADDRESS for testing
+  poolAddress: PRIVACY_POOL_ADDRESS, // mainnet, or SEPOLIA_PRIVACY_POOL_ADDRESS for testing
   feeMode: { poolFeeToken: quote.sellTokenAddress },
   prover,
 })

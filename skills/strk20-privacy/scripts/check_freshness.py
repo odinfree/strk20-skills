@@ -32,10 +32,11 @@ TIMEOUT_SECONDS = 20
 
 NPM_TAGS = {
     ("starknet", "latest"): "10.0.2",
-    ("starknet", "next"): "10.7.0",
+    ("starknet", "next"): "10.7.1",
     ("@starknet-io/get-starknet-discovery", "next"): "6.0.4",
-    ("@starknet-io/get-starknet-wallet-standard", "next"): "6.0.4",
+    ("@starknet-io/get-starknet-wallet-standard", "next"): "6.0.5",
     ("@starknet-io/types-js", "latest"): "0.10.3",
+    ("@starknet-io/types-js", "beta"): "0.10.4-beta.2",
     ("@avnu/avnu-sdk", "latest"): "4.2.0",
 }
 
@@ -47,12 +48,17 @@ EXPECTED_PRIVACY_PATHS = {
     "packages/privacy/Scarb.toml",
     "packages/shadow_account_anonymizer/Scarb.toml",
     "packages/vesu_lending_anonymizer/Scarb.toml",
+    "client/package.json",
+    "client/src/shadow-accounts.ts",
+    "e2e/tests/devnet/shadow-account-compute-invoke.test.ts",
+    "e2e/tests/devnet/shadow-account-invoke.test.ts",
 }
 ABSENT_PRIVACY_PATHS = {
     "packages/escrow/Scarb.toml",
     "packages/sub_account_anonymizer/Scarb.toml",
 }
 EXPECTED_SDK_VERSION = "0.14.3-rc.5"
+EXPECTED_CLIENT_VERSION = "0.1.0"
 
 WALLET_SPEC_URL = (
     "https://raw.githubusercontent.com/starkware-libs/starknet-specs/"
@@ -198,6 +204,20 @@ def check_privacy_repo() -> list[tuple[str, str]]:
         output.append(result("error", "Privacy SDK source version", str(error)))
 
     try:
+        package = fetch_json(f"{PRIVACY_REPO_RAW}/client/package.json")
+        current_version = package.get("version")
+        status = "ok" if current_version == EXPECTED_CLIENT_VERSION else "drift"
+        output.append(
+            result(
+                status,
+                "Privacy client source version",
+                f"expected {EXPECTED_CLIENT_VERSION}, found {current_version}",
+            )
+        )
+    except Exception as error:
+        output.append(result("error", "Privacy client source version", str(error)))
+
+    try:
         interfaces = fetch_text(f"{PRIVACY_REPO_RAW}/sdk/src/interfaces.ts")
         current_names = ("shadowAccounts(", "shadowAccountAnonymizerAddress")
         legacy_names = ("subaccounts(", "subAccountAnonymizerAddress")
@@ -207,14 +227,14 @@ def check_privacy_repo() -> list[tuple[str, str]]:
             output.append(
                 result(
                     "drift",
-                    "shadow-account TypeScript surface",
+                    "shadow-account TypeScript interface",
                     f"missing={missing or 'none'}, legacy={legacy or 'none'}",
                 )
             )
         else:
-            output.append(result("ok", "shadow-account TypeScript surface", "RC.5 names present"))
+            output.append(result("ok", "shadow-account TypeScript interface", "RC.5 names present"))
     except Exception as error:
-        output.append(result("error", "shadow-account TypeScript surface", str(error)))
+        output.append(result("error", "shadow-account TypeScript interface", str(error)))
 
     return output
 
@@ -227,13 +247,32 @@ def check_wallet_spec() -> list[tuple[str, str]]:
         return [result("error", "Wallet API development spec", str(error))]
 
     status = "ok" if current == EXPECTED_WALLET_SPEC_BRANCH_VERSION else "drift"
-    return [
+    output = [
         result(
             status,
             "Wallet API development spec",
             f"expected {EXPECTED_WALLET_SPEC_BRANCH_VERSION}, found {current}",
         )
     ]
+
+    method_names = {method.get("name") for method in spec.get("methods", [])}
+    schema_names = set(spec.get("components", {}).get("schemas", {}))
+    expected_method = "wallet_strk20ShadowAccountCommitment"
+    expected_schema = "STRK20_SHADOW_ACCOUNT_INVOKE_ACTION"
+    missing = []
+    if expected_method not in method_names:
+        missing.append(expected_method)
+    if expected_schema not in schema_names:
+        missing.append(expected_schema)
+    if missing:
+        output.append(
+            result("drift", "Wallet API shadow accounts", f"missing={missing}")
+        )
+    else:
+        output.append(
+            result("ok", "Wallet API shadow accounts", "method and action present")
+        )
+    return output
 
 
 def check_by_example(quick: bool) -> list[tuple[str, str]]:

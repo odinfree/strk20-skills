@@ -68,8 +68,9 @@ A sample of the load-bearing details, so you know the level:
   twice and the UI should say why.
 - The SDK submission tail: `provingBlockId = currentBlock - 10`, conditional
   `proofFacts` spread, `tip: 0n`.
-- The RC.5 shadow-account rename, including the new builder, config key,
-  Cairo package, and event-key migration warning.
+- The RC.5 shadow-account route, including deterministic nonce scoping,
+  collection policies, the public-state privacy boundary, prerelease Wallet
+  API support, and event-key migration warning.
 - The proof base must include every prior onchain state change the proof reads.
   With `provingBlockId = head - 10`, wait until `head - 10 > receiptBlock`
   before proving against a deployment, funding transfer, or approval.
@@ -77,8 +78,9 @@ A sample of the load-bearing details, so you know the level:
   transfer.
 - What stays public on every route: deposits, withdrawals, open-note amounts,
   timing.
-- A bundled freshness checker for npm tags, monorepo paths, the Wallet API
-  development version, the Sepolia pool address, and all 30 tutorial pages.
+- A bundled freshness checker for npm tags, monorepo and shadow-account test
+  paths, the Wallet API development version and action, the Sepolia pool
+  address, and all 30 tutorial pages.
 
 ## Relationship to the official agent skill
 
@@ -87,7 +89,7 @@ maintained in
 [`starkience/strk20-agent-skills`](https://github.com/starkience/strk20-agent-skills),
 is the official integration planner. It scans your repo, interviews you,
 writes `STRK20_INTEGRATION_PLAN.md`, and executes it phase by phase. The four
-skills here are the knowledge layer underneath: concepts, API surfaces, and
+skills here are the knowledge layer underneath: concepts, API interfaces, and
 failure tables an agent can pull into any task, planned or not. They compose.
 Install both.
 
@@ -106,10 +108,15 @@ snapshot of the STRK20 Integration Agent Skill page, with a source header
 added for provenance.
 
 The route-specific skills record the exact package snapshot checked on
-2026-08-16. The Privacy SDK's `latest` tag was `0.14.3-rc.5` on GitHub
+2026-08-28. The Privacy SDK's `latest` tag was `0.14.3-rc.5` on GitHub
 Packages, while the package still returned 404 on public npmjs. Query the
 correct registry when refreshing it. Update and test the starknet.js,
 get-starknet, and Wallet API connection stack as one unit.
+
+The shadow-account guide also uses the user-supplied 2026-08-28 overview PDF
+and the current upstream contracts, SDK, client, Wallet API spec, and tests.
+It separates working contract and client code from wallet rollout and public
+deployment claims that still need proof.
 
 ## Sources and license
 
