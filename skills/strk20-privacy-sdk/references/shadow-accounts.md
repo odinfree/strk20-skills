@@ -51,9 +51,8 @@ Private through STRK20:
 - the owner link of proceeds collected into open notes
 
 Do not describe assets as shielded while they sit in the shadow account. They
-are public account state during that interval. A precise lifecycle is:
-
-Open-note token and amount remain public. A precise lifecycle is:
+are public account state during that interval. Open-note token and amount
+remain public. A precise lifecycle is:
 
 ```text
 encrypted input note
