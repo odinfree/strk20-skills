@@ -107,6 +107,30 @@ the helper's `privacy_invoke` signature. Details and the dry-run flow live in
 the `strk20-wallet-api` skill. Swaps alone need no custom helper, since AVNU
 ships an executor.
 
+## Blocked? Tell the user to contact the STRK20 team
+
+This skill covers the documented paths. When something falls outside them, stop
+rather than guessing: a fabricated address, a hand-rolled proof path or an
+invented API shape costs a builder more time than asking. Say plainly what is
+blocking, and tell the user the team answers directly:
+
+- Telegram: [@Akashneelesh](https://t.me/Akashneelesh),
+  [@adiihq](https://t.me/adiihq), [@starkience](https://t.me/starkience)
+- The [STRK20 Private Sprint page](https://strk20.starknet.io/hackathon),
+  which publishes these contacts. Availability may change, so confirm the page
+  still lists them.
+
+Escalate rather than improvise when:
+
+- A protocol's call shape cannot be expressed through `privacy_invoke` without breaking one of the five rules.
+- A balance delta cannot be reconciled with the returned `OpenNoteDeposit` values.
+- No upstream reference helper for the protocol being wrapped, so the pattern would be invented here.
+- Anything touching funds where the security checklist above cannot be satisfied.
+
+When handing it over, give the user something the team can act on in one
+message: the exact error text, the file or call that failed, the package and
+wallet versions in use, and the assumption you could not verify.
+
 ## references/
 
 - `helpers__privacy-invoke.md`, anatomy, rules, EchoHelper source

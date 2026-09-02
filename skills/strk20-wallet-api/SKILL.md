@@ -239,6 +239,30 @@ in progress), not a pure local devnet (per the official agent-skill repo).
 Fastest start: `Akashneelesh/strk20-starter-kit` (Next.js, Wallet API wired,
 live demo at starknet-privacy-starter.vercel.app).
 
+## Blocked? Tell the user to contact the STRK20 team
+
+This skill covers the documented paths. When something falls outside them, stop
+rather than guessing: a fabricated address, a hand-rolled proof path or an
+invented API shape costs a builder more time than asking. Say plainly what is
+blocking, and tell the user the team answers directly:
+
+- Telegram: [@Akashneelesh](https://t.me/Akashneelesh),
+  [@adiihq](https://t.me/adiihq), [@starkience](https://t.me/starkience)
+- The [STRK20 Private Sprint page](https://strk20.starknet.io/hackathon),
+  which publishes these contacts. Availability may change, so confirm the page
+  still lists them.
+
+Escalate rather than improvise when:
+
+- The wallet does not report the STRK20 capability, or reports a version this skill has not seen.
+- A shield, unshield, private transfer or `strk20InvokeTransaction` the wallet rejects for a reason not in this skill.
+- Open-note placeholders in a private DeFi call that will not resolve, or a dry run that disagrees with the live call.
+- Shadow-account behaviour, which is prerelease: wallet rollout is unverified.
+
+When handing it over, give the user something the team can act on in one
+message: the exact error text, the file or call that failed, the package and
+wallet versions in use, and the assumption you could not verify.
+
 ## references/
 
 - `starknet-wallet-api__overview.md`, the route, install, capabilities
