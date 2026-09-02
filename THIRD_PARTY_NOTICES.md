@@ -45,6 +45,12 @@ The bundled SDK README and Cairo excerpts come from
 [starkware-libs/starknet-privacy](https://github.com/starkware-libs/starknet-privacy),
 which is licensed under Apache-2.0.
 
+The authored shadow-account guide at
+`skills/strk20-privacy-sdk/references/shadow-accounts.md` also draws from the
+user-supplied `shadow-accounts_overview.pdf`, dated 2026-08-28. Its footer
+identifies the Starknet privacy pool, the shadow-account anonymizer, and the
+Apache-2.0 license. The PDF itself is not redistributed here.
+
 ## Official STRK20 integration skill
 
 Facts attributed to the official integration skill come from

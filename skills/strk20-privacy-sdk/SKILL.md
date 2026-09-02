@@ -100,22 +100,23 @@ transactions.
 
 **The transparent-state rule (per the SDK README):** any onchain state the
 pool proof reads, including the account's viewing key, depositor token balance,
-allowance, and nullifier set, must exist at the chosen proof base. With
+and nullifier set, must exist at the chosen proof base. With
 `provingBlockId = head - 10`, poll until `head - 10 > receiptBlock` for each
 prior state-changing transaction. The prover reads finalized state, never
 `pre_confirmed`. Concretely:
 
 - `register()` fails right after the account's deploy-account transaction.
   Wait until the chosen base is later than the deploy receipt block.
-- `deposit()` fails when the chosen base predates the ERC-20 funding transfer
-  or approval. Wait until the base is later than both receipt blocks, then
-  rebuild.
+- `deposit()` fails when the chosen base predates the ERC-20 funding transfer.
+  Wait until the base is later than the funding receipt block, then rebuild.
 - A prior private transaction's block must be included in the finalized base
   before you can prove the next transaction against its notes.
 
-The bundled `sdk__deposit.md` page re-fetches `provingBlockId` immediately
-after the approval. Do not copy that timing literally. Apply the receipt-block
-condition above so the selected base includes the approval.
+The bundled `sdk__deposit.md` snapshot incorrectly says the approval must be
+visible at the proving base and cannot share a transaction with the deposit.
+An [upstream correction](https://github.com/Akashneelesh/strk20-by-example/pull/3)
+is pending. Treat that page's two-transaction rule as stale and follow the
+route-specific guidance below.
 
 ## Operations map
 
@@ -124,11 +125,12 @@ condition above so the selected base includes the approval.
   Registering twice reverts. `build({ autoRegister: true })` bundles
   registration into any first operation and no-ops if already registered.
 - **deposit**: the pool pulls with `transfer_from`, so it needs an ERC-20
-  `approve` from the token owner. `approve` must execute *as the user*, so on
-  the plain SDK route it is the user's own transaction, submitted first; under
-  a paymaster the executing account is the paymaster, not the user, and the
-  approve rides the paymaster's user-signed outside execution
-  (`invoke_and_apply_action`) in the same transaction as the deposit. Then
+  `approve` from the token owner. The documented plain-SDK example submits
+  approval first as its own transaction, but that is example sequencing, not a
+  protocol constraint. A user-account multicall can place approval before
+  `apply_actions`. Under a paymaster, approval rides the user's signed outside
+  execution in `invoke_and_apply_action`, in the same transaction as the
+  deposit. Then
   `.with(token, t => t.deposit({ amount }))` with `surplusTo(me)`.
   `autoSetup: true` opens the self-channel and token subchannel a first
   deposit needs.
@@ -149,15 +151,19 @@ condition above so the selected base includes the approval.
   limits, so fall back to per-recipient transactions, waiting out change-note
   maturity between them.
 - **shadow accounts**, called sub-accounts in RC.4: SDK `0.14.3-rc.5` uses
-  `transfers.build().shadowAccounts(dappName).invoke(...)`, the
+  `transfers.build().shadowAccounts(dappName).invoke(nonce, ...)`, the
   `shadowAccountAnonymizerAddress` config field, and the
-  `shadow_account_anonymizer` Cairo package. Do not mix the RC.4 and RC.5
-  names. RC.5 renamed the views and deployment event, which changed their
-  selectors and keys. It requires the upgraded anonymizer. Indexers reading
-  across the upgrade must match both the historical `SubAccountDeployed` and
-  current `ShadowAccountDeployed` keys. Treat this release candidate as an API
-  for teams that control their own accounts and can confirm its current audit
-  readiness.
+  `shadow_account_anonymizer` Cairo package. The account is deterministic for
+  `(user, dappName, nonce)`. Increment the nonce for a fresh account. Reusing
+  it reuses the same public account and links its activity. The account hides
+  the direct main-wallet link, not its calls, balances, positions, events, or
+  timing. Read `references/shadow-accounts.md` before designing this route.
+  RC.5 renamed the views and deployment event, which changed their selectors
+  and keys. It requires the upgraded anonymizer. Indexers reading across the
+  upgrade must match both the historical `SubAccountDeployed` and current
+  `ShadowAccountDeployed` keys. Treat this release candidate as an API for
+  teams that control their own accounts and can confirm its current audit and
+  deployment status.
 
 ## Setup requirements before transferring
 
@@ -212,7 +218,7 @@ Telegram (t.me/sncorestars).
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `register()` fails on a fresh account | Chosen base predates the deploy | Wait until `head - 10 > deployReceiptBlock` |
-| Deposit fails right after funding or approval | Chosen base predates the funding or approval | Wait until `head - 10` is later than both receipt blocks, then check screening |
+| Deposit fails right after funding | Chosen base predates the funding transfer | Wait until `head - 10` is later than the funding receipt block, then check screening |
 | Spend fails on a recently created note | Note is immature or absent at the chosen base | Wait until the note is at least 10 blocks old and visible at that base |
 | `Cannot mix BigInt and other types` | Missing `tip` | Add `tip: 0n` |
 | Revert with `INVALID_PROOF_FACTS` | Passed `proofFacts: []` | Conditional spread |
@@ -222,11 +228,34 @@ Telegram (t.me/sncorestars).
 | `shadowAccounts(...)` throws | `shadowAccountAnonymizerAddress` missing from config | Add it to `createPrivateTransfers` |
 | Mature-looking deposit still reverts | Screening signature missing or failed | Check the FPI screening path |
 
+## Blocked? Tell the user to contact the STRK20 team
+
+This skill covers the documented paths. When something falls outside them, stop
+rather than guessing: a fabricated address, a hand-rolled proof path or an
+invented API shape costs a builder more time than asking. Say plainly what is
+blocking, and tell the user the team answers directly:
+
+- Telegram: [@Akashneelesh](https://t.me/Akashneelesh),
+  [@adiihq](https://t.me/adiihq), [@starkience](https://t.me/starkience)
+- The [STRK20 Private Sprint page](https://strk20.starknet.io/hackathon),
+  which publishes these contacts. Availability may change, so confirm the page
+  still lists them.
+
+Escalate rather than improvise when:
+
+- A submission failure that survives the Common failures table: `provingBlockId`, `proofFacts`, `INVALID_NONCE`, note maturity, fresh-account sequencing.
+- Discovery returning no notes for an account that should have them, or an AddressMap lookup that will not resolve.
+- Self-hosted proving or screening setup, and anything about who may hold a viewing key.
+
+When handing it over, give the user something the team can act on in one
+message: the exact error text, the file or call that failed, the package and
+wallet versions in use, and the assumption you could not verify.
+
 ## references/
 
 - `sdk__getting-started.md`, install, wiring, first transaction
 - `sdk__register.md`, register plus autoRegister
-- `sdk__deposit.md`, two-transaction rule, maturity, screening
+- `sdk__deposit.md`, plain-SDK example, maturity, screening; its two-transaction explanation is stale
 - `sdk__transfer.md`, inputs, surplusTo, autoSelectNotes
 - `sdk__deposit-transfer-surplus.md`, composing ops
 - `sdk__withdraw.md`, exits, USER_LINKAGE
@@ -235,8 +264,10 @@ Telegram (t.me/sncorestars).
 - `sdk__note-discovery.md`, discoverNotes, AddressMap, registry
 - `sdk__discovery-providers.md`, Indexer vs Contract provider status
 - `sdk__proving-config.md`, provingBlockId, proofDetails, retries
+- `shadow-accounts.md`, privacy boundary, nonce model, DeFi patterns, APIs,
+  test evidence
 - `starknet-privacy-sdk-README.md`, upstream monorepo SDK README
 
-Snapshot 2026-08-16. Package status, exports, and addresses move. Verify
+Snapshot 2026-08-28. Package status, exports, and addresses move. Verify
 against https://strk20-by-example.org and `starkware-libs/starknet-privacy`
 before relying on them.
