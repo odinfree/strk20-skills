@@ -57,7 +57,7 @@ ABSENT_PRIVACY_PATHS = {
     "packages/escrow/Scarb.toml",
     "packages/sub_account_anonymizer/Scarb.toml",
 }
-EXPECTED_SDK_VERSION = "0.14.3-rc.5"
+EXPECTED_SDK_VERSION = "0.14.3-rc.6"
 EXPECTED_CLIENT_VERSION = "0.1.0"
 
 WALLET_SPEC_URL = (
@@ -239,7 +239,7 @@ def check_privacy_repo() -> list[tuple[str, str]]:
                 )
             )
         else:
-            output.append(result("ok", "shadow-account TypeScript interface", "RC.5 names present"))
+            output.append(result("ok", "shadow-account TypeScript interface", "current names present"))
     except Exception as error:
         output.append(result("error", "shadow-account TypeScript interface", str(error)))
 

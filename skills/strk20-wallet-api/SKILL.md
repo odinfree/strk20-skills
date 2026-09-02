@@ -27,7 +27,7 @@ parts.
   `@starknet-io/get-starknet-wallet-standard@6.0.3`, and
   `@starknet-io/types-js@0.10.3`.
 - The npm `next` tags had advanced to starknet.js 10.7.1 and get-starknet
-  6.0.5 on 2026-08-28. Do not combine a floating `starknet@^10.4.0` with
+  6.0.5 on 2026-09-02. Do not combine a floating `starknet@^10.4.0` with
   stale hard pins. Either use the tested exact stack or update the connection
   packages together and rerun the WalletAccount guide and wallet tests.
 - Shadow accounts have a separate prerelease gate. Wallet API 0.10.4-rc.1,

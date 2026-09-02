@@ -68,7 +68,8 @@ A sample of the load-bearing details, so you know the level:
   that signed outside execution in the same transaction as the deposit.
 - The SDK submission tail: `provingBlockId = currentBlock - 10`, conditional
   `proofFacts` spread, `tip: 0n`.
-- The RC.5 shadow-account route, including deterministic nonce scoping,
+- The shadow-account route under the names introduced in RC.5, including
+  deterministic nonce scoping,
   collection policies, the public-state privacy boundary, prerelease Wallet
   API support, and event-key migration warning.
 - The proof base must include every prior onchain state change the proof reads.
@@ -108,7 +109,7 @@ snapshot of the STRK20 Integration Agent Skill page, with a source header
 added for provenance.
 
 The route-specific skills record the exact package snapshot checked on
-2026-08-28. The Privacy SDK's `latest` tag was `0.14.3-rc.5` on GitHub
+2026-09-02. The Privacy SDK's `latest` tag was `0.14.3-rc.6` on GitHub
 Packages, while the package still returned 404 on public npmjs. Query the
 correct registry when refreshing it. Update and test the starknet.js,
 get-starknet, and Wallet API connection stack as one unit.

@@ -119,7 +119,7 @@ or write:
   required". Do not call the escrow a backdoor, and do not oversell. The
   edges (deposits, withdrawals, timing) are public.
 
-## Route status (snapshot 2026-08-28, verify before relying on it)
+## Route status (snapshot 2026-09-02, verify before relying on it)
 
 - Wallet API version 0.10.3. The official integration skill uses Ready as the
   tested dapp baseline and still marks Xverse's dapp-facing Wallet API in
@@ -128,9 +128,9 @@ or write:
   Braavos and embedded-wallet providers are not privacy-enabled in the cited
   integration sources.
 - Shadow accounts, called private sub-accounts in RC.4 and older docs, hide the
-  main-wallet link during account activity. Privacy SDK `0.14.3-rc.5` renamed
-  the builder to `build().shadowAccounts(dappName)`, the config key to
-  `shadowAccountAnonymizerAddress`, and the Cairo package to
+  main-wallet link during account activity. Privacy SDK `0.14.3-rc.6` uses the
+  names introduced in RC.5: `build().shadowAccounts(dappName)`,
+  `shadowAccountAnonymizerAddress`, and the Cairo package
   `shadow_account_anonymizer`. The renamed views and event use new selectors,
   so RC.5 requires the upgraded anonymizer and an indexer spanning the upgrade
   must match both event keys. Stable `@starknet-io/types-js` 0.10.3 lacks the

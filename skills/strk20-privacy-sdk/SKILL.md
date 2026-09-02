@@ -150,7 +150,7 @@ route-specific guidance below.
   `invoke()` per transaction. Very large recipient lists can hit proof-size
   limits, so fall back to per-recipient transactions, waiting out change-note
   maturity between them.
-- **shadow accounts**, called sub-accounts in RC.4: SDK `0.14.3-rc.5` uses
+- **shadow accounts**, called sub-accounts in RC.4: SDK `0.14.3-rc.6` uses
   `transfers.build().shadowAccounts(dappName).invoke(nonce, ...)`, the
   `shadowAccountAnonymizerAddress` config field, and the
   `shadow_account_anonymizer` Cairo package. The account is deterministic for
@@ -255,7 +255,8 @@ wallet versions in use, and the assumption you could not verify.
 
 - `sdk__getting-started.md`, install, wiring, first transaction
 - `sdk__register.md`, register plus autoRegister
-- `sdk__deposit.md`, plain-SDK example, maturity, screening; its two-transaction explanation is stale
+- `sdk__deposit.md`, plain-SDK example, maturity, and screening. Its
+  two-transaction explanation is stale
 - `sdk__transfer.md`, inputs, surplusTo, autoSelectNotes
 - `sdk__deposit-transfer-surplus.md`, composing ops
 - `sdk__withdraw.md`, exits, USER_LINKAGE
@@ -268,6 +269,7 @@ wallet versions in use, and the assumption you could not verify.
   test evidence
 - `starknet-privacy-sdk-README.md`, upstream monorepo SDK README
 
-Snapshot 2026-08-28. Package status, exports, and addresses move. Verify
+Package status refreshed 2026-09-02. Bundled documentation snapshot:
+2026-08-28. Exports and addresses move. Verify
 against https://strk20-by-example.org and `starkware-libs/starknet-privacy`
 before relying on them.
