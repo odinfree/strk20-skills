@@ -66,6 +66,13 @@ WALLET_SPEC_URL = (
 )
 EXPECTED_WALLET_SPEC_BRANCH_VERSION = "0.10.4-rc.1"
 
+TEAM_CONTACTS_URL = "https://strk20.starknet.io/hackathon"
+EXPECTED_TEAM_CONTACTS = {
+    "https://t.me/Akashneelesh",
+    "https://t.me/adiihq",
+    "https://t.me/starkience",
+}
+
 EXPECTED_SEPOLIA_POOL = (
     "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91"
 )
@@ -353,6 +360,20 @@ def check_by_example(quick: bool) -> list[tuple[str, str]]:
     return output
 
 
+def check_team_contacts() -> list[tuple[str, str]]:
+    try:
+        page = fetch_text(TEAM_CONTACTS_URL)
+    except Exception as error:
+        return [result("error", "STRK20 team contact page", str(error))]
+
+    missing = sorted(contact for contact in EXPECTED_TEAM_CONTACTS if contact not in page)
+    if missing:
+        return [
+            result("drift", "STRK20 team contacts", f"missing={missing}")
+        ]
+    return [result("ok", "STRK20 team contacts", "three published Telegram links")]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--quick", action="store_true", help="skip per-page liveness checks")
@@ -363,6 +384,7 @@ def main() -> int:
         ("privacy monorepo", check_privacy_repo()),
         ("wallet API", check_wallet_spec()),
         ("STRK20 by Example", check_by_example(args.quick)),
+        ("team contacts", check_team_contacts()),
     ]
 
     statuses = []

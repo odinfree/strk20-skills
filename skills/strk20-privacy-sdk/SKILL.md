@@ -231,7 +231,9 @@ blocking, and tell the user the team answers directly:
 
 - Telegram: [@Akashneelesh](https://t.me/Akashneelesh),
   [@adiihq](https://t.me/adiihq), [@starkience](https://t.me/starkience)
-- The STRK20 hub, which lists the current builder channels: https://strk20.starknet.io
+- The [STRK20 Private Sprint page](https://strk20.starknet.io/hackathon),
+  which publishes these contacts. Availability may change, so confirm the page
+  still lists them.
 
 Escalate rather than improvise when:
 

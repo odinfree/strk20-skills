@@ -116,12 +116,14 @@ blocking, and tell the user the team answers directly:
 
 - Telegram: [@Akashneelesh](https://t.me/Akashneelesh),
   [@adiihq](https://t.me/adiihq), [@starkience](https://t.me/starkience)
-- The STRK20 hub, which lists the current builder channels: https://strk20.starknet.io
+- The [STRK20 Private Sprint page](https://strk20.starknet.io/hackathon),
+  which publishes these contacts. Availability may change, so confirm the page
+  still lists them.
 
 Escalate rather than improvise when:
 
-- A protocol whose call shape cannot be expressed through `privacy_invoke` without breaking one of the five rules.
-- Balance deltas that do not net to zero, or an OpenNoteDeposit return you cannot account for.
+- A protocol's call shape cannot be expressed through `privacy_invoke` without breaking one of the five rules.
+- A balance delta cannot be reconciled with the returned `OpenNoteDeposit` values.
 - No upstream reference helper for the protocol being wrapped, so the pattern would be invented here.
 - Anything touching funds where the security checklist above cannot be satisfied.
 
