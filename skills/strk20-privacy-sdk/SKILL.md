@@ -100,22 +100,23 @@ transactions.
 
 **The transparent-state rule (per the SDK README):** any onchain state the
 pool proof reads, including the account's viewing key, depositor token balance,
-allowance, and nullifier set, must exist at the chosen proof base. With
+and nullifier set, must exist at the chosen proof base. With
 `provingBlockId = head - 10`, poll until `head - 10 > receiptBlock` for each
 prior state-changing transaction. The prover reads finalized state, never
 `pre_confirmed`. Concretely:
 
 - `register()` fails right after the account's deploy-account transaction.
   Wait until the chosen base is later than the deploy receipt block.
-- `deposit()` fails when the chosen base predates the ERC-20 funding transfer
-  or approval. Wait until the base is later than both receipt blocks, then
-  rebuild.
+- `deposit()` fails when the chosen base predates the ERC-20 funding transfer.
+  Wait until the base is later than the funding receipt block, then rebuild.
 - A prior private transaction's block must be included in the finalized base
   before you can prove the next transaction against its notes.
 
-The bundled `sdk__deposit.md` page re-fetches `provingBlockId` immediately
-after the approval. Do not copy that timing literally. Apply the receipt-block
-condition above so the selected base includes the approval.
+The bundled `sdk__deposit.md` snapshot incorrectly says the approval must be
+visible at the proving base and cannot share a transaction with the deposit.
+An [upstream correction](https://github.com/Akashneelesh/strk20-by-example/pull/3)
+is pending. Treat that page's two-transaction rule as stale and follow the
+route-specific guidance below.
 
 ## Operations map
 
@@ -123,11 +124,16 @@ condition above so the selected base includes the approval.
   public viewing key and stores the auditor-encrypted private key.
   Registering twice reverts. `build({ autoRegister: true })` bundles
   registration into any first operation and no-ops if already registered.
-- **deposit**: TWO transactions, never one. The ERC-20 `approve` of the pool
-  must land first, because `apply_actions` is reentrancy-guarded against
-  sharing a transaction. Then `.with(token, t => t.deposit({ amount }))` with
-  `surplusTo(me)`. `autoSetup: true` opens the self-channel and token
-  subchannel a first deposit needs.
+- **deposit**: the pool pulls with `transfer_from`, so it needs an ERC-20
+  `approve` from the token owner. The documented plain-SDK example submits
+  approval first as its own transaction, but that is example sequencing, not a
+  protocol constraint. A user-account multicall can place approval before
+  `apply_actions`. Under a paymaster, approval rides the user's signed outside
+  execution in `invoke_and_apply_action`, in the same transaction as the
+  deposit. Then
+  `.with(token, t => t.deposit({ amount }))` with `surplusTo(me)`.
+  `autoSetup: true` opens the self-channel and token subchannel a first
+  deposit needs.
 - **transfer**: `.inputs(note)` picks notes, or `autoSelectNotes: "naive"`
   (smallest covering set) or `"all"` (consolidation). `surplusTo(...)` is
   REQUIRED whenever inputs may exceed outputs, else `execute()` throws
@@ -212,7 +218,7 @@ Telegram (t.me/sncorestars).
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `register()` fails on a fresh account | Chosen base predates the deploy | Wait until `head - 10 > deployReceiptBlock` |
-| Deposit fails right after funding or approval | Chosen base predates the funding or approval | Wait until `head - 10` is later than both receipt blocks, then check screening |
+| Deposit fails right after funding | Chosen base predates the funding transfer | Wait until `head - 10` is later than the funding receipt block, then check screening |
 | Spend fails on a recently created note | Note is immature or absent at the chosen base | Wait until the note is at least 10 blocks old and visible at that base |
 | `Cannot mix BigInt and other types` | Missing `tip` | Add `tip: 0n` |
 | Revert with `INVALID_PROOF_FACTS` | Passed `proofFacts: []` | Conditional spread |
@@ -249,7 +255,7 @@ wallet versions in use, and the assumption you could not verify.
 
 - `sdk__getting-started.md`, install, wiring, first transaction
 - `sdk__register.md`, register plus autoRegister
-- `sdk__deposit.md`, two-transaction rule, maturity, screening
+- `sdk__deposit.md`, plain-SDK example, maturity, screening; its two-transaction explanation is stale
 - `sdk__transfer.md`, inputs, surplusTo, autoSelectNotes
 - `sdk__deposit-transfer-surplus.md`, composing ops
 - `sdk__withdraw.md`, exits, USER_LINKAGE

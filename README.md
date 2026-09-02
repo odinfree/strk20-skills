@@ -64,8 +64,8 @@ A sample of the load-bearing details, so you know the level:
 
 - The version boundary: STRK20 support starts at starknet.js 10.4.0. A bare
   install still gets the npm `latest` line, which does not carry the API.
-- A shield is two transactions (ERC-20 approve first), so the wallet prompts
-  twice and the UI should say why.
+- A shield needs an ERC-20 approve from the token owner. A paymaster can carry
+  that signed outside execution in the same transaction as the deposit.
 - The SDK submission tail: `provingBlockId = currentBlock - 10`, conditional
   `proofFacts` spread, `tip: 0n`.
 - The RC.5 shadow-account route, including deterministic nonce scoping,
@@ -73,7 +73,7 @@ A sample of the load-bearing details, so you know the level:
   API support, and event-key migration warning.
 - The proof base must include every prior onchain state change the proof reads.
   With `provingBlockId = head - 10`, wait until `head - 10 > receiptBlock`
-  before proving against a deployment, funding transfer, or approval.
+  before proving against a deployment or funding transfer.
 - The anonymizer balance-delta idiom, and why helpers approve rather than
   transfer.
 - What stays public on every route: deposits, withdrawals, open-note amounts,
