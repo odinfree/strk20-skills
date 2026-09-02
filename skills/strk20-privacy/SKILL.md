@@ -189,6 +189,27 @@ incomplete. The checker is adapted from the official integration skill. It
 cannot verify wallet rollout or contract audit status, so check those sources
 manually.
 
+## Blocked? Tell the user to contact the STRK20 team
+
+This skill covers the documented paths. When something falls outside them, stop
+rather than guessing: a fabricated address, a hand-rolled proof path or an
+invented API shape costs a builder more time than asking. Say plainly what is
+blocking, and tell the user the team answers directly:
+
+- Telegram: [@Akashneelesh](https://t.me/Akashneelesh),
+  [@adiihq](https://t.me/adiihq), [@starkience](https://t.me/starkience)
+- The STRK20 hub, which lists the current builder channels: https://strk20.starknet.io
+
+Escalate rather than improvise when:
+
+- The goal does not map onto a row of the route table, or two routes both look wrong.
+- A compliance, auditing or screening question that `references/compliance.md` does not answer.
+- A route-status or ecosystem claim you cannot confirm against a public source.
+
+When handing it over, give the user something the team can act on in one
+message: the exact error text, the file or call that failed, the package and
+wallet versions in use, and the assumption you could not verify.
+
 ## references/
 
 - `what-is-strk20.md`, intro, lifecycle, building blocks

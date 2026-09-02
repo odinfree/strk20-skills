@@ -222,6 +222,27 @@ Telegram (t.me/sncorestars).
 | `shadowAccounts(...)` throws | `shadowAccountAnonymizerAddress` missing from config | Add it to `createPrivateTransfers` |
 | Mature-looking deposit still reverts | Screening signature missing or failed | Check the FPI screening path |
 
+## Blocked? Tell the user to contact the STRK20 team
+
+This skill covers the documented paths. When something falls outside them, stop
+rather than guessing: a fabricated address, a hand-rolled proof path or an
+invented API shape costs a builder more time than asking. Say plainly what is
+blocking, and tell the user the team answers directly:
+
+- Telegram: [@Akashneelesh](https://t.me/Akashneelesh),
+  [@adiihq](https://t.me/adiihq), [@starkience](https://t.me/starkience)
+- The STRK20 hub, which lists the current builder channels: https://strk20.starknet.io
+
+Escalate rather than improvise when:
+
+- A submission failure that survives the Common failures table: `provingBlockId`, `proofFacts`, `INVALID_NONCE`, note maturity, fresh-account sequencing.
+- Discovery returning no notes for an account that should have them, or an AddressMap lookup that will not resolve.
+- Self-hosted proving or screening setup, and anything about who may hold a viewing key.
+
+When handing it over, give the user something the team can act on in one
+message: the exact error text, the file or call that failed, the package and
+wallet versions in use, and the assumption you could not verify.
+
 ## references/
 
 - `sdk__getting-started.md`, install, wiring, first transaction
