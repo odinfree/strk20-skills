@@ -48,7 +48,7 @@ before assuming broader hardware compatibility.
 
 ## Quickstart: Linux or an Ubuntu WSL terminal
 
-You need Git, Python 3.10+, a running Linux amd64 Docker server, Docker Compose
+You need Git, Python 3.10+, a running Linux amd64 Docker Engine **28.0.0+**, Docker Compose
 and your own Starknet RPC v0.10 endpoint. For Ubuntu, use the
 [official Docker Engine instructions](https://docs.docker.com/engine/install/ubuntu/).
 
@@ -58,14 +58,19 @@ clone your fork, then enter this starter directory. To try the upstream copy:
 ```sh
 git clone https://github.com/odinfree/strk20-skills.git
 cd strk20-skills/skills/strk20-local-prover/assets/local-prover
-docker version
+python3 check.py docker
 docker compose version
-docker info --format '{{.OSType}}/{{.Architecture}}'
 ```
 
 The Docker **server** should report Linux and x86_64/amd64. A Docker client
 without a working server is insufficient. Review your Docker context if the
 server is remote; the port will be bound on that server's loopback interface.
+The checker queries the selected server and rejects older engines, unsupported
+platforms and unrecognized version strings. It does not audit firewall rules.
+Docker documents that engines older than 28.0.0 can expose localhost-published
+ports to peers on the same network segment. Keep the default bridge NAT
+configuration; custom direct routing can change exposure even on newer engines.
+See [Docker's port-publishing documentation](https://docs.docker.com/engine/network/port-publishing/).
 
 Create the private configuration and edit it in your editor:
 
@@ -84,17 +89,24 @@ apply. [Alchemy's Starknet docs](https://www.alchemy.com/docs/reference/starknet
 are the starting point for obtaining an endpoint.
 
 Use one literal assignment per line, with URLs enclosed in single quotes.
-Keep comments on separate lines. The checker deliberately does not evaluate
+Keep comments on separate lines. Use UTF-8 and URL-encode embedded apostrophes
+or backslashes rather than using dotenv escapes. The checker deliberately does not evaluate
 shell commands or dotenv expressions. Existing shell variables override
 `.env` in Compose and in the checker; clear old `RPC_URL` / `CHAIN_ID` variables
 if you want the file to control them. Never place a wallet signing key or
 viewing key in this service configuration.
 
+The explicit `--file` and `--env-file` flags below keep Compose pointed at the
+files the checker reads, even when a shell has an old `COMPOSE_FILE` or
+`COMPOSE_ENV_FILES` setting. Use these flags for subsequent operations too.
+If you intentionally customize the project name or Docker context, use that
+same selection consistently for checks, startup, logs and shutdown.
+
 ```sh
 python3 check.py rpc
-docker compose config --quiet
-docker compose pull
-docker compose up -d
+docker compose --file compose.yaml --env-file .env config --quiet
+docker compose --file compose.yaml --env-file .env pull
+docker compose --file compose.yaml --env-file .env up -d
 python3 check.py health
 ```
 
@@ -112,7 +124,7 @@ generation**. An actual proof requires the matching SDK and valid application
 state. The commands above do not create a wallet, register it, or send a
 transaction.
 
-The host port is always bound to `127.0.0.1`. Set `PROVER_HOST_PORT` if 3000 is
+The supplied Compose file binds the host port to `127.0.0.1`. Set `PROVER_HOST_PORT` if 3000 is
 already occupied, then use `python3 check.py health --port YOUR_PORT` and the
 same port in your SDK configuration. Do not stop an unknown process to free it.
 
@@ -274,27 +286,28 @@ block; this does not replace fixing an unhealthy service.
 ## Operations and troubleshooting
 
 ```sh
-docker compose ps
+docker compose --file compose.yaml --env-file .env ps
 python3 check.py logs
 python3 check.py logs --follow
-docker compose stop
-docker compose up -d
+docker compose --file compose.yaml --env-file .env stop
+docker compose --file compose.yaml --env-file .env up -d
 ```
 
 `stop` stops this Compose service; `up -d` starts it again. To remove this
-starter's container and network, use `docker compose down`. Its local `.env`
+starter's container and network, use `docker compose --file compose.yaml --env-file .env down`. Its local `.env`
 and the downloaded image remain. None of these commands act on wallet funds.
 
 After an RPC credential change, edit `.env` privately, run `check.py rpc`, then
-`docker compose up -d --force-recreate`. A simple container restart does not
+`docker compose --file compose.yaml --env-file .env up -d --force-recreate`. A simple container restart does not
 reload an env file. Docker administrators can inspect container environment
 and logs: only run this on a trusted host. Do not paste raw `docker inspect`,
-`docker compose config`, request bodies or logs into issues; `config --quiet`
+`docker compose --file compose.yaml --env-file .env config`, request bodies or logs into issues; `config --quiet`
 validates without displaying credentials, and the helper redacts URLs in logs.
 
 | Symptom | Check |
 | --- | --- |
 | Docker command exists, server fails | Start the Docker daemon/Desktop and confirm the selected context |
+| Docker check rejects the version or architecture | Use a recognized stable Engine 28.0.0+ on Linux amd64; review vendor-suffixed versions against upstream before adapting the check |
 | Immediate entrypoint failure | Keep `BUILD_MODE=release`; set `RPC_URL` rather than `STARKNET_RPC_URL` |
 | RPC check rejects the network | Match the endpoint's chain to `CHAIN_ID`; inspect stale shell overrides privately |
 | RPC reports v0.9 | Select a provider endpoint that actually returns RPC v0.10 |
@@ -319,9 +332,10 @@ make your own compatibility checks, and record the scope of your tests.
 
 ```sh
 python3 -m unittest discover -s tests -v
-docker compose config --quiet
+docker compose --file compose.yaml --env-file .env config --quiet
 ```
 
-See [VALIDATION.md](VALIDATION.md) for what was actually exercised. Follow the
+See [VALIDATION.md](VALIDATION.md) for deployment evidence and [AUDIT.md](AUDIT.md)
+for the subsequent review, fixes and regression checks. Follow the
 repository's [contribution guide](https://github.com/odinfree/strk20-skills/blob/main/CONTRIBUTING.md) for skill checks
 and source updates. No claim of a security audit is implied by passing tests.

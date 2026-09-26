@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only RPC/prover checks and redacted logs. Python 3.10+, stdlib only."""
 import argparse
+import http.client
 import ipaddress
 import json
 import os
@@ -28,7 +29,9 @@ def read_config(path, environ=None):
     try:
         if os.name == "posix" and stat.S_IMODE(path.stat().st_mode) & 0o077:
             raise CheckError("Protect the config first: chmod 600 .env")
-        lines = path.read_text().splitlines()
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except UnicodeError:
+        raise CheckError("Config must be a UTF-8 text file") from None
     except OSError:
         raise CheckError("Cannot read .env; copy .env.example and configure it first") from None
     config = {}
@@ -42,6 +45,8 @@ def read_config(path, environ=None):
             raise CheckError(f"Invalid config assignment on line {number}")
         if value.startswith("'") and value.endswith("'") and len(value) >= 2:
             value = value[1:-1]
+            if "'" in value or "\\" in value:
+                raise CheckError(f"Use URL encoding instead of quotes or backslashes on config line {number}")
         elif any(c in value for c in "\"'$#") or any(c.isspace() for c in value):
             raise CheckError(f"Use a single-quoted literal value on config line {number}")
         config[key] = value
@@ -52,6 +57,10 @@ def read_config(path, environ=None):
 
 
 def validate_url(url):
+    # urlsplit normalizes some controls; reject them before parsing so an HTTP
+    # client's InvalidURL exception cannot echo a credential-bearing path.
+    if any(character.isspace() or ord(character) < 32 or ord(character) == 127 for character in url):
+        raise CheckError("RPC URL contains whitespace or control characters; use URL encoding")
     try:
         parts = urllib.parse.urlsplit(url)
         _ = parts.port
@@ -79,10 +88,10 @@ def rpc(url, method):
     if method not in ALLOWED_METHODS:
         raise CheckError("This helper only performs read-only health checks")
     validate_url(url)
-    request = urllib.request.Request(url, data=json.dumps({
-        "jsonrpc": "2.0", "id": 1, "method": method, "params": []
-    }).encode(), headers={"Content-Type": "application/json"})
     try:
+        request = urllib.request.Request(url, data=json.dumps({
+            "jsonrpc": "2.0", "id": 1, "method": method, "params": []
+        }).encode(), headers={"Content-Type": "application/json"})
         with urllib.request.build_opener(NoRedirect).open(request, timeout=20) as response:
             payload = response.read(65537)
             if len(payload) > 65536:
@@ -92,7 +101,7 @@ def rpc(url, method):
         code = error.code
         error.close()
         raise CheckError(f"HTTP {code}; check the endpoint, credentials and service") from None
-    except (OSError, ValueError, urllib.error.URLError):
+    except (OSError, ValueError, urllib.error.URLError, http.client.HTTPException):
         raise CheckError("RPC connection or JSON response failed; endpoint details withheld") from None
     if not isinstance(data, dict) or data.get("jsonrpc") != "2.0" or data.get("id") != 1:
         raise CheckError("Unexpected JSON-RPC health response")
@@ -122,15 +131,37 @@ def check_upstream(config):
     return {"upstream": "OK", "chain": chain, "rpcVersion": spec, "blockNumber": block}
 
 
+def check_docker():
+    """Check the selected server, without printing Docker context/error details."""
+    try:
+        process = subprocess.run(["docker", "version", "--format", "{{json .Server}}"],
+                                 capture_output=True, text=True, encoding="utf-8",
+                                 errors="replace", timeout=20, check=True)
+        data = json.loads(process.stdout)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        raise CheckError("Cannot query Docker server; check the daemon and selected context privately") from None
+    if not isinstance(data, dict):
+        raise CheckError("Docker did not report a server")
+    if data.get("Os") != "linux" or data.get("Arch") not in ("amd64", "x86_64"):
+        raise CheckError("This pinned starter requires a Linux amd64 Docker server")
+    release = data.get("Version")
+    pattern = r"([0-9]+)\.([0-9]+)\.([0-9]+)(?:\+[A-Za-z0-9.-]+)?"
+    match = re.fullmatch(pattern, release) if isinstance(release, str) else None
+    if not match or tuple(map(int, match.groups())) < (28, 0, 0):
+        raise CheckError("Use Docker Engine 28.0.0+ with a recognized stable version; older localhost publishing can be exposed")
+    return {"dockerServer": "OK", "version": release, "platform": "linux/amd64"}
+
+
 def redact(text, config):
     value = config.get("RPC_URL", "")
     if value:
         text = text.replace(value, "[RPC URL REDACTED]")
-    return re.sub(r'''(?:https?|wss?)://[^\s"'<>]+''', "[URL REDACTED]", text)
+    return re.sub(r'''(?:https?|wss?)://[^\s"'<>]+''', "[URL REDACTED]", text, flags=re.IGNORECASE)
 
 
 def logs(config, follow):
-    command = ["docker", "compose", "logs", "--no-color", "--tail", "100"]
+    command = ["docker", "compose", "--file", str(ROOT / "compose.yaml"),
+               "--env-file", str(ROOT / ".env"), "logs", "--no-color", "--tail", "100"]
     if follow:
         command.append("--follow")
     command.append("prover")
@@ -147,14 +178,16 @@ def logs(config, follow):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["rpc", "health", "logs"])
+    parser.add_argument("command", choices=["docker", "rpc", "health", "logs"])
     parser.add_argument("--port", type=int, help="Loopback prover port; default 3000")
     parser.add_argument("--follow", action="store_true", help="Follow redacted container logs")
     args = parser.parse_args()
     try:
         # A Mac client can check an SSH tunnel without storing the RPC credential.
-        config = read_config(ROOT / ".env") if args.command != "health" else {}
-        if args.command == "rpc":
+        config = read_config(ROOT / ".env") if args.command in ("rpc", "logs") else {}
+        if args.command == "docker":
+            result = check_docker()
+        elif args.command == "rpc":
             result = check_upstream(config)
         elif args.command == "health":
             port = args.port if args.port is not None else 3000

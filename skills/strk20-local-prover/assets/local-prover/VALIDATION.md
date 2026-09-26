@@ -5,7 +5,7 @@ audit or a promise of compatibility on every CPU, RPC provider or future
 Starknet release. No wallet, viewing key, private transaction data or RPC
 credential is included in these artifacts.
 
-## Automated checks
+## Initial automated checks
 
 - 11 Python tests passed on Python 3.14. The helper supports Python 3.10+.
 - Tests cover matching and mismatched networks, RPC version rejection,
@@ -18,6 +18,11 @@ credential is included in these artifacts.
   payload were checked before publishing.
 - CI runs the Python tests and validates Compose using a synthetic URL.
   CI does not receive credentials, pull the prover image or submit transactions.
+
+The subsequent [RCI review record](AUDIT.md) documents three correction and
+verification passes, an expanded 22-test suite on Python 3.10 and 3.14, and
+fresh read-only checks with the updated helper. The records below describe
+the original deployment smoke test; it was not repeated as a funded test.
 
 ## Live starter smoke test
 

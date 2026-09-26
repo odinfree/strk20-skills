@@ -35,14 +35,19 @@ when assessing whether the setup suits their use.
 
 ## Bring up and verify
 
-1. Confirm a Linux amd64 Docker server and Compose plugin, with enough free RAM.
+1. Run `python3 check.py docker`: require a Linux amd64 Docker Engine 28.0.0+
+   and a Compose plugin, with enough free RAM. The helper checks the server's
+   version and platform, not firewall rules. Preserve default bridge NAT;
+   custom direct routing can change exposure.
    Inspect existing containers/ports before choosing a project name and port.
 2. Copy `.env.example` to `.env`, restrict it to mode 600, and edit it privately.
    Follow the literal dotenv syntax in the guide. Never print resolved Compose
    config, raw environment values, Docker inspect environment, or raw logs.
 3. Run `python3 check.py rpc`: require the intended chain and RPC v0.10.
-4. Run `docker compose config --quiet`, `docker compose pull`, then
-   `docker compose up -d`. These commands only start the proving service.
+4. Use `docker compose --file compose.yaml --env-file .env` for all operations:
+   first `config --quiet`, then `pull`, then `up -d`. Explicit files prevent
+   inherited Compose file settings from selecting a different project/config.
+   These commands only start the proving service.
 5. Run `python3 check.py health` (or `--port PORT`) and inspect redacted logs with
    `python3 check.py logs`. A specVersion result proves only API reachability.
 6. For an authorized wallet integration, verify an actual proof using the
