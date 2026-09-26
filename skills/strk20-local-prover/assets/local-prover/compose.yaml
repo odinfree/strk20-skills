@@ -1,0 +1,23 @@
+services:
+  prover:
+    # Official PRIVACY-0.14.3-RC.2, pinned to the tested image index.
+    image: ghcr.io/starkware-libs/starknet-privacy/transaction-prover@sha256:a2f71d7139069fa566c4f44bdd66b79cac992c0cbc20ddf0af3a3558c6cabd64
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      BUILD_MODE: release
+      CHAIN_ID: ${CHAIN_ID:-SN_SEPOLIA}
+      RPC_URL: ${RPC_URL:?Set your own RPC_URL in .env}
+      PROVER_IP: 0.0.0.0
+      PROVER_PORT: "3000"
+      MAX_CONCURRENT_REQUESTS: "1"
+      RUST_LOG: warn
+    ports:
+      - "127.0.0.1:${PROVER_HOST_PORT:-3000}:3000"
+    cpus: ${PROVER_CPUS:-12}
+    mem_limit: ${PROVER_MEMORY:-32g}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

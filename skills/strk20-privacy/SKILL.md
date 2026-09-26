@@ -26,7 +26,7 @@ shape), open the reference page.
 | Embedded-wallet or AA product (Privy, Cartridge, chipi, cavos, Dynamic) | These manage user keys and are not privacy-enabled today. Treat the product as the key-holder and take the SDK route | `strk20-privacy-sdk` |
 | Hide the main-wallet link during account-based app activity | Shadow accounts, called private sub-accounts before SDK RC.5. SDK route shipped. Wallet API is in prerelease tooling, with wallet rollout unverified | `strk20-privacy-sdk` |
 | Fund from or withdraw to an EVM wallet (USDC) | Privacy Bridge over Circle CCTP | see Ecosystem below |
-| Operate proof generation yourself | Prover backend, screening still applies | `strk20-privacy-sdk` |
+| Operate proof generation yourself | Local Docker prover or remote host over SSH; screening still applies | `strk20-local-prover` for deployment, `strk20-privacy-sdk` for wallet wiring |
 
 Rules of thumb from the docs. Start with the narrowest route that keeps user
 keys in the right place. Wallet API first for user-facing dapps. Never ask a

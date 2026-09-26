@@ -1,0 +1,4 @@
+interface:
+  display_name: "STRK20 Local Prover"
+  short_description: "Run a private STRK20 prover on Linux or WSL2"
+  default_prompt: "Use $strk20-local-prover to set up and verify a local STRK20 proving service."

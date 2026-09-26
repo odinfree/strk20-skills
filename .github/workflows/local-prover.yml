@@ -1,0 +1,17 @@
+name: Local prover starter
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check helper behavior
+        run: python3 -m unittest discover -s skills/strk20-local-prover/assets/local-prover/tests -v
+      - name: Validate Compose without credentials or starting a service
+        env:
+          RPC_URL: https://example.invalid/rpc
+        run: docker compose -f skills/strk20-local-prover/assets/local-prover/compose.yaml config --quiet

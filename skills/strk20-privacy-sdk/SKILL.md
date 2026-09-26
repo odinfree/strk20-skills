@@ -14,6 +14,10 @@ The SDK is TypeScript. A Python or Rust backend that wants STRK20 runs a
 Node (>= 24) sidecar service around it (per the official agent-skill repo).
 Full doc pages sit in `references/`.
 
+To deploy the proving service itself, use `strk20-local-prover` or the
+[local-prover starter](../strk20-local-prover/assets/local-prover/README.md).
+It covers Linux/WSL2, RPC configuration, SSH tunnels and service checks.
+
 ## Install
 
 ```sh

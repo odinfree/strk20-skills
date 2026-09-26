@@ -1,28 +1,42 @@
 # strk20-skills
 
 Agent skills for building on [STRK20](https://strk20.starknet.io), the privacy
-pool on Starknet. Four skills give a coding agent the working knowledge: how
+pool on Starknet. Five skills give a coding agent the working knowledge: how
 the pool works, how a dapp asks a privacy-enabled wallet to act, how to write
-the Cairo adapter for private DeFi, and how to drive the low-level SDK.
+the Cairo adapter for private DeFi, how to drive the low-level SDK, and how
+to operate a local prover.
 
-Each skill is a distilled `SKILL.md` plus relevant upstream source pages
-bundled verbatim under `references/`, so the agent can open the source instead
-of reconstructing it from memory. The skill body labels source status and
-community examples. Each skill also includes Codex UI metadata under
-`agents/openai.yaml`.
+The integration skills include relevant upstream source pages bundled under
+`references/`, so the agent can open the source instead of reconstructing it
+from memory. The local-prover skill includes a runnable community starter.
+Skill bodies label source status and community examples. Each skill also
+includes Codex UI metadata under `agents/openai.yaml`.
+
+## Run your own prover
+
+**[Open the local-prover guide and Docker starter](skills/strk20-local-prover/assets/local-prover/README.md)**
+for Linux, Windows/WSL2, or a Mac connected to an amd64 host. Fork this repo,
+use your own RPC endpoint, and follow the checks before connecting a wallet.
+The starter pins the official image, binds to localhost, and includes redacted
+diagnostics. It does not submit transactions.
+
+**DYOR:** this is experimental, unaudited community tooling, provided as-is.
+Review current upstream releases, audits, privacy limits and fees; start on
+testnet and take responsibility for your credentials and funds. Read the
+[full responsibility notice](skills/strk20-local-prover/assets/local-prover/README.md#dyor-and-responsibility).
 
 ## Install
 
 For Claude Code, Cursor, Codex, and other agents that read the skills format:
 
 ```sh
-npx skills add welttowelt/strk20-skills
+npx skills add odinfree/strk20-skills
 ```
 
 Manual install for Claude Code, global:
 
 ```sh
-git clone https://github.com/welttowelt/strk20-skills
+git clone https://github.com/odinfree/strk20-skills
 mkdir -p ~/.claude/skills
 cp -R strk20-skills/skills/* ~/.claude/skills/
 ```
@@ -30,7 +44,7 @@ cp -R strk20-skills/skills/* ~/.claude/skills/
 Manual install for Codex, global:
 
 ```sh
-git clone https://github.com/welttowelt/strk20-skills
+git clone https://github.com/odinfree/strk20-skills
 mkdir -p ~/.agents/skills
 cp -R strk20-skills/skills/* ~/.agents/skills/
 ```
@@ -47,6 +61,7 @@ For one project only, copy into the repo's `.claude/skills/` or
 | `strk20-wallet-api` | Private dapps in TypeScript or React, acting through the user's wallet | 6 pages: Wallet API, private DeFi end to end, AVNU swaps, tip-jar example |
 | `strk20-anonymizer-contracts` | Cairo `privacy_invoke` helper contracts for private DeFi | 4 pages: anatomy, swap helper, Vesu lending, escrow |
 | `strk20-privacy-sdk` | Privacy wallets and backends holding their own keys, SDK debugging | 11 SDK pages plus the upstream SDK README |
+| `strk20-local-prover` | Run an official proving service locally or through an SSH tunnel | Community Docker starter, platform guide, diagnostics and tests |
 
 ## Contributing
 
@@ -89,7 +104,7 @@ The [`STRK20 Integration Agent Skill`](https://strk20-by-example.org/agent-skill
 maintained in
 [`starkience/strk20-agent-skills`](https://github.com/starkience/strk20-agent-skills),
 is the official integration planner. It scans your repo, interviews you,
-writes `STRK20_INTEGRATION_PLAN.md`, and executes it phase by phase. The four
+writes `STRK20_INTEGRATION_PLAN.md`, and executes it phase by phase. The five
 skills here are the knowledge layer underneath: concepts, API interfaces, and
 failure tables an agent can pull into any task, planned or not. They compose.
 Install both.
