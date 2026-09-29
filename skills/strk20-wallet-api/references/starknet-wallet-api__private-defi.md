@@ -9,7 +9,7 @@ This page covers the other half: how a dapp actually reaches that contract
 through the [Starknet Wallet API](/starknet-wallet-api/overview), without ever
 touching a viewing key.
 
-Requires `starknet@^10.4.0` and a wallet supporting Wallet API `0.10.3`.
+Requires `starknet@^10.8.0` and a wallet supporting Wallet API `0.10.4`.
 
 ## The two actions
 
@@ -33,7 +33,7 @@ the time you build the calldata.
 ## A private swap
 
 ```ts
-import type { STRK20_ACTION } from "@starknet-io/types-js"
+import type { STRK20_ACTION } from "starknet"
 
 const actions: STRK20_ACTION[] = [
   // 1. Open the note the swap output will be credited into.
@@ -57,6 +57,12 @@ initiated it.
 
 Match the calldata order to your helper's `privacy_invoke` signature; the pool
 deserializes it directly into that function's parameters.
+
+Use a helper `invoke` for a shared, stateless operation such as an atomic swap.
+Use [Shadow Accounts](/starknet-wallet-api/shadow-accounts) when the protocol
+needs a stable pseudonymous caller or a position that persists across
+transactions. The two routes share the transaction's single invoke-phase slot,
+so they cannot be combined in one STRK20 transaction.
 
 ## Dry-run first
 
@@ -87,6 +93,6 @@ measured at execution time. Deposits and withdrawals remain public legs.
 - [Anonymizer Contract Anatomy](/helpers/privacy-invoke)
 - [Swap Helper](/helpers/swap-helper)
 - [AVNU Private Swaps](/starknet-wallet-api/avnu-private-swaps) - swaps without writing a helper at all
+- [Shadow Accounts](/starknet-wallet-api/shadow-accounts) - persistent per-dapp identity
 
 ---
-

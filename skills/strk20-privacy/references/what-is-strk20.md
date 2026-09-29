@@ -43,13 +43,13 @@ exist rather than a separate ecosystem.
    but the app-side action and amounts can still be public.
 4. **Withdraw** - move tokens back out of the pool to a public address.
 
-**Private sub-accounts** widen the DeFi leg: account-based flows such as
-borrowing and staking run through real Starknet accounts that carry no public
-onchain link back to the user's main wallet, and using fresh sub-accounts per
-app fragments the trail further. The same caveat applies - app-side activity
-and amounts can still be public. The SDK route ships as of Privacy SDK
-`0.14.3-rc.4`; the Wallet API route is still pending, so dapps relying on the
-user's wallet cannot use them yet.
+**Shadow accounts** widen the DeFi leg: account-based flows such as borrowing
+and staking run through persistent, deterministic addresses with no public
+onchain link back to the user's main wallet. Each dapp and nonce can use a
+different identity. The shadow account's balances, calls, and positions remain
+public; its privacy comes from unlinkability. Shadow accounts are available
+through both the [Starknet Wallet API](/starknet-wallet-api/shadow-accounts) and
+the [Privacy SDK](/sdk/shadow-accounts).
 
 ## What makes it different
 
@@ -73,6 +73,7 @@ user's wallet cannot use them yet.
 | Viewing key         | Keypair used to encrypt/decrypt note data and derive nullifiers                      |
 | Channel             | Unidirectional sender → recipient lane where notes are stored                        |
 | Anonymizer contract | Small adapter that lets pool funds interact with external DeFi                       |
+| Shadow account      | Persistent per-dapp address that is not publicly linked to the user's main wallet    |
 | Deposit screening   | Every deposit is screened and signed by FPI; the pool verifies the signature onchain |
 
 Each of these has its own page in the Concepts section - read them in order and
@@ -93,4 +94,3 @@ Have a coding agent? It can run this integration for you - see
 [Agent Skill](/agent-skill).
 
 ---
-

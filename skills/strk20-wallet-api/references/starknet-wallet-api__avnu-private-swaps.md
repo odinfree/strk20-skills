@@ -12,12 +12,12 @@ dapp can offer private swaps with **no Cairo to write, review, or audit**.
 ## Install
 
 ```shell
-npm install @avnu/avnu-sdk@^4.2.0 starknet@^10.4.0
+npm install @avnu/avnu-sdk@^4.2.0 starknet@^10.8.0
 ```
 
 ## What you need
 
-- A STRK20-capable wallet (Wallet API `>= 0.10.3`).
+- A STRK20-capable wallet (Wallet API `>= 0.10.4`).
 - The sell token **already shielded** — the swap moves value inside the pool, so
   it cannot shield for you.
 
@@ -45,6 +45,10 @@ const { transactionHash } = await executePrivateSwap({
 `PRIVACY_POOL_ADDRESS` targets **mainnet**; for Sepolia testing, AVNU also
 exports `SEPOLIA_PRIVACY_POOL_ADDRESS`.
 
+The currently verified AVNU executor and both pool addresses are listed under
+[Deployed Contract Addresses](/contract-addresses). The executor address is
+also returned with each private quote; use that response at runtime.
+
 AVNU's paymaster relays the transaction, so the submitting address is not the
 user's.
 
@@ -66,4 +70,3 @@ staking, or any app-specific flow. Those still need the pattern in
 - [Swap Helper](/helpers/swap-helper) - the do-it-yourself route
 
 ---
-

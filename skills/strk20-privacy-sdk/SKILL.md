@@ -154,7 +154,7 @@ route-specific guidance below.
   `invoke()` per transaction. Very large recipient lists can hit proof-size
   limits, so fall back to per-recipient transactions, waiting out change-note
   maturity between them.
-- **shadow accounts**, called sub-accounts in RC.4: SDK `0.14.3-rc.6` uses
+- **shadow accounts**, called sub-accounts in RC.4: SDK `0.14.3-rc.8` uses
   `transfers.build().shadowAccounts(dappName).invoke(nonce, ...)`, the
   `shadowAccountAnonymizerAddress` config field, and the
   `shadow_account_anonymizer` Cairo package. The account is deterministic for
@@ -165,9 +165,10 @@ route-specific guidance below.
   RC.5 renamed the views and deployment event, which changed their selectors
   and keys. It requires the upgraded anonymizer. Indexers reading across the
   upgrade must match both the historical `SubAccountDeployed` and current
-  `ShadowAccountDeployed` keys. Treat this release candidate as an API for
-  teams that control their own accounts and can confirm its current audit and
-  deployment status.
+  `ShadowAccountDeployed` keys. The low-level SDK is still a release candidate;
+  user-facing dapps should prefer the stable Wallet API 0.10.4 route in
+  `strk20-wallet-api`, while teams controlling their own keys should confirm
+  the SDK's current audit and release status.
 
 ## Setup requirements before transferring
 
@@ -269,11 +270,10 @@ wallet versions in use, and the assumption you could not verify.
 - `sdk__note-discovery.md`, discoverNotes, AddressMap, registry
 - `sdk__discovery-providers.md`, Indexer vs Contract provider status
 - `sdk__proving-config.md`, provingBlockId, proofDetails, retries
-- `shadow-accounts.md`, privacy boundary, nonce model, DeFi patterns, APIs,
-  test evidence
+- `shadow-accounts.md`, current SDK builder, address helper, invocation, and collection policies
 - `starknet-privacy-sdk-README.md`, upstream monorepo SDK README
 
-Package status refreshed 2026-09-02. Bundled documentation snapshot:
-2026-08-28. Exports and addresses move. Verify
+Package status and shadow-account documentation refreshed 2026-09-29.
+Exports and addresses move. Verify
 against https://strk20-by-example.org and `starkware-libs/starknet-privacy`
 before relying on them.

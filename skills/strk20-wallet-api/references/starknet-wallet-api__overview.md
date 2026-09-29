@@ -18,13 +18,13 @@ pair this route with an [Anonymizer Contract](/helpers/privacy-invoke).
 ## Install
 
 ```shell
-npm install starknet@^10.4.0
+npm install starknet@^10.8.0
 ```
 
-**Pin the version.** STRK20 support landed in starknet.js 10.4.0 and ships on the
-npm `next` tag. A bare `npm install starknet` resolves to `latest`, which is
-still 10.0.x and contains none of the STRK20 API — `WalletAccountV6`,
-`strk20InvokeTransaction`, and `STRK20_ACTION` will all be missing.
+**Pin the version.** starknet.js `10.8.0` is the current stable release and
+includes Wallet API `0.10.4`, including shadow accounts. The `11.x` line is
+published on the npm `next` tag; use it only when your app has completed the
+[v10 to v11 migration](https://starknet-js.com/docs/guides/migrate/).
 
 ## Why most dapps want this route
 
@@ -66,11 +66,15 @@ Without writing any privacy cryptography, a dapp can ask the wallet to:
 - **Shield** - deposit public ERC-20 tokens into the pool.
 - **Private transfer** - move value privately between registered users.
 - **Withdraw (unshield)** - move tokens back out to a public address.
+- **Use a shadow account** - act through a persistent per-dapp address that is
+  not publicly linked to the user's main wallet.
 - **Swap** - where the connected wallet supports it.
 
 Broader DeFi actions (lending, staking, custom flows) pair the Starknet Wallet
 API with an app-specific anonymizer contract that the pool invokes atomically —
 see [Private DeFi End to End](/starknet-wallet-api/private-defi) for the wiring.
+For positions that need a stable pseudonymous caller, use
+[Shadow Accounts](/starknet-wallet-api/shadow-accounts) instead.
 
 ## What to keep in mind
 
@@ -92,8 +96,8 @@ see [Private DeFi End to End](/starknet-wallet-api/private-defi) for the wiring.
 
 - [starknet-start](/starknet-wallet-api/starknet-start-hook)
 - [starknet.js](/starknet-wallet-api/starknet-js)
+- [Shadow Accounts](/starknet-wallet-api/shadow-accounts)
 - [Anonymizer Contract Anatomy](/helpers/privacy-invoke)
 - [Build Privacy Wallets](/sdk/getting-started)
 
 ---
-

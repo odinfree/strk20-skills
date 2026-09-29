@@ -2,7 +2,7 @@
 
 Source: https://strk20-by-example.org/builder-privacy-overview
 
-> Choose the right STRK20 integration path: Starknet Wallet API, anonymizer contracts, building privacy wallets, sub-accounts, or prover infrastructure.
+> Choose the right STRK20 integration path: Starknet Wallet API, anonymizer contracts, building privacy wallets, shadow accounts, or prover infrastructure.
 
 STRK20 is a privacy pool plus a small set of integration surfaces. Start with
 the narrowest surface that keeps user keys in the right place and only move to a
@@ -15,7 +15,7 @@ lower-level route when your product needs more control.
 | Build a private dapp anywhere from private DeFi, private consumer apps, private games, etc. | [Anonymizer contracts](/helpers/privacy-invoke) and [Starknet Wallet API](/starknet-wallet-api/overview) | The wallet manages viewing keys, notes, proving, and submission; for DeFi, the pool calls your `privacy_invoke` adapter atomically, then credits the result back into private notes. |
 | Build a privacy wallet on Starknet                                                          | [Build Privacy Wallets](/sdk/getting-started)                                                            | Direct access to registration, channels, note discovery, transaction building, and proving configuration.                                                                            |
 | Operate proving infrastructure yourself                                                     | Prover backend                                                                                           | For wallets and infrastructure teams that need control over proof generation.                                                                                                        |
-| Hide the link between a user's main wallet and app activity                                 | Private sub-accounts (SDK route available; Wallet API pending)                                           | Advanced account-based privacy route; SDK-route teams can start today, dapps relying on the user's wallet must wait.                                                                 |
+| Hide the link between a user's main wallet and app activity                                 | [Shadow accounts](/starknet-wallet-api/shadow-accounts)                                                  | Persistent per-dapp identity available through Wallet API `0.10.4`, starknet.js `10.8.0`, and Privacy SDK `0.14.3-rc.8`.                                                             |
 | Let users fund a private balance from an EVM wallet and withdraw it back to one             | [Privacy Bridge](https://github.com/starkware-libs/privacy-bridge)                                       | Moves USDC between EVM chains and the pool over Circle CCTP, with its own inbound/outbound anonymizer contracts, so the two sides are not linked onchain.                            |
 
 ## Core surfaces
@@ -70,20 +70,22 @@ integrators. Use it when you need to
 manage registration, channels, note discovery, transaction construction, and
 proving providers yourself. See [Build Privacy Wallets](/sdk/getting-started).
 
-### Private sub-accounts
+### Shadow accounts
 
-Private sub-accounts are for account-based app activity where the user does not
-want a public onchain link to their main wallet.
+Shadow accounts are persistent, pseudonymous identities for account-based app
+activity. Each `(user, dapp, nonce)` tuple maps to a deterministic address with
+no public onchain link to the user's main wallet.
 
-**Status is split.** The **SDK route is available** as of Privacy SDK
-`0.14.3-rc.4`: `transfers.build().subaccounts(dappName).invoke(...)`, backed by
-the `sub_account_anonymizer` contract package. The **Wallet API route is not** —
-no sub-account method is exposed by `@starknet-io/types-js` 0.10.3 or
-starknet.js, so a dapp relying on the user's wallet cannot use them yet.
+Both integration routes are available. Dapps can send
+`shadow_account_invoke` through Wallet API `0.10.4` with starknet.js `10.8.0`;
+wallets and advanced backends can use Privacy SDK `0.14.3-rc.8` through
+`transfers.build().shadowAccounts(dappName)`. See
+[Shadow Accounts through the Wallet API](/starknet-wallet-api/shadow-accounts)
+or [Shadow Accounts with the Privacy SDK](/sdk/shadow-accounts).
 
-If you build the account yourself (a wallet, or a backend holding its own keys),
-you can start now. If you rely on the user's wallet, wait for the Wallet API
-call. Confirm audit readiness either way.
+The shadow address, balances, calls, and positions are public. What stays
+private is the link back to the user's main wallet. A shadow account has no
+keys; only the `ShadowAccountAnonymizer` can execute through it.
 
 ### Prover backend
 
@@ -112,4 +114,3 @@ meets the same deposit-screening requirement as hosted services.
 - [Build Privacy Wallets](/sdk/getting-started)
 
 ---
-

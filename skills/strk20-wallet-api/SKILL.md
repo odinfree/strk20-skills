@@ -15,25 +15,17 @@ parts.
 
 ## Version baseline. Verify before installing
 
-- STRK20 support landed in starknet.js 10.4.0. A bare `npm install starknet`
-  resolves to the `latest` line, which was 10.0.2 on 2026-08-16 and lacks
-  `WalletAccountV6`, `strk20InvokeTransaction`, and `STRK20_ACTION`.
+- Core STRK20 support landed in starknet.js 10.4.0; stable shadow-account
+  support landed in starknet.js 10.8.0 with Wallet API 0.10.4.
 - Existing repo on starknet.js v5, v6, or v7? The jump to 10.4.0 is a breaking
   migration, plan it as its own task before wiring STRK20.
-- The connected wallet must support Wallet API `>= 0.10.3` (types from
-  `@starknet-io/types-js` 0.10.3).
-- The official integration skill tested an exact stack: `starknet@10.4.0`,
-  `@starknet-io/get-starknet-discovery@6.0.3`,
-  `@starknet-io/get-starknet-wallet-standard@6.0.3`, and
-  `@starknet-io/types-js@0.10.3`.
-- The npm `next` tags had advanced to starknet.js 10.7.1 and get-starknet
-  6.0.5 on 2026-09-02. Do not combine a floating `starknet@^10.4.0` with
-  stale hard pins. Either use the tested exact stack or update the connection
-  packages together and rerun the WalletAccount guide and wallet tests.
-- Shadow accounts have a separate prerelease gate. Wallet API 0.10.4-rc.1,
-  `@starknet-io/types-js@0.10.4-beta.2`, and `starknet@10.7.1` on npm `next`
-  include the action and commitment method. Stable types-js 0.10.3 does not.
-  A library upgrade does not add support to the connected wallet.
+- The stable, tested shadow-account row is `starknet@10.8.0`,
+  `@starknet-io/types-js@0.10.4`, and get-starknet discovery plus wallet
+  standard `6.0.6`. Pin the row together and rerun connection and wallet tests
+  when upgrading it.
+- Core STRK20 methods need Wallet API `>= 0.10.3`; shadow accounts need
+  Wallet API `>= 0.10.4`. A library upgrade does not add the capability to the
+  connected wallet, so detect the advertised version at runtime.
 - Wrapper layers: Starkzap's docs do not list STRK20 support, and
   starknet-react or starknetkit may lag starknet.js 10.4.0. Verify current
   compatibility on npm before promising a drop-in. Either way the plug-in
@@ -52,6 +44,7 @@ parts.
 ```ts
 const versions = await walletV6.supportedWalletApi(wallet)
 const supported = versions.some((v) => compareVersions(v, "0.10.3") >= 0)
+const supportsShadowAccounts = versions.some((v) => compareVersions(v, "0.10.4") >= 0)
 ```
 
 Do not probe `strk20Balances` to feature-detect. It is a balance-reading
@@ -91,11 +84,13 @@ Two submission details prevent silent UI failures:
   `BigInt(left) === BigInt(right)`, since padded and unpadded hexadecimal
   strings can name the same token or account.
 
-## Shadow accounts are prerelease wallet functionality
+## Shadow accounts: stable per-dapp identities
 
-Shadow accounts let one user derive a deterministic Starknet account for each
-`(dappName, nonce)` pair. Use a new nonce for a fresh account. Reusing a nonce
-reuses the address and links its public activity.
+Shadow accounts let one user derive a deterministic public execution account
+for each `(dappName, nonce)` pair. It is not another wallet: it has no signing
+key and only the canonical `ShadowAccountAnonymizer` can execute through it.
+Use a new nonce for a fresh address. Reusing a nonce reuses the address and
+links its public activity.
 
 ```ts
 import type {
@@ -129,15 +124,33 @@ the full token balance, `diff` collects only the gain from this interaction,
 and `exact` collects a specified amount. One policy applies to every open note
 settled by the action.
 
+Most `shadow_account_invoke` requests need only `dapp_name` and `nonce`. When
+the dapp must fund the address or read its public position first, ask for the
+nonce-independent partial commitment and resolve it through the canonical
+anonymizer's `get_shadow_accounts` view. Prefer that view over duplicating
+address-derivation internals:
+
+```ts
+const partial = await account.strk20ShadowAccountCommitment("myDapp")
+const accounts = await anonymizer.get_shadow_accounts(partial, 0, 1, false)
+const shadowAddress = accounts[0].address
+```
+
+Canonical deployments checked on 2026-09-29:
+
+- Mainnet: `0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7`
+- Sepolia: `0x010a2285310c107c731d997afc147afb7495daff6397c2d242133d9fe8d9b147`
+
+Read `references/starknet-wallet-api__shadow-accounts.md` before building the
+flow and re-check the deployment for the connected network before launch.
+
 Capability-check the connected wallet before rendering this flow. Do not infer
 support from starknet.js alone. The general 0.10.3 check above is insufficient
-for shadow accounts. Require `supportedWalletApi()` to advertise the
-0.10.4-rc.1 shadow-account schema or a compatible later version, then handle
-an unsupported-method response from the commitment or invoke call. The account
+for shadow accounts. Require `supportedWalletApi()` to advertise 0.10.4 or a
+compatible later version, then handle an unsupported-method response from the
+commitment or invoke call. The account
 hides the direct link to the main wallet. Its address, calls, balances,
-positions, events, and timing remain public. Read the `strk20-privacy-sdk`
-skill's
-`references/shadow-accounts.md` before launch.
+positions, events, and timing remain public.
 
 - A shield needs an ERC-20 `approve`, and `approve` must execute as the token
   owner. That does not force two transactions: under a paymaster the approve
@@ -196,7 +209,7 @@ Swapping is the one DeFi action that needs no helper of your own. AVNU
 deployed its executor.
 
 ```ts
-// npm install @avnu/avnu-sdk@^4.2.0 starknet@10.4.0
+// npm install @avnu/avnu-sdk@^4.2.0 starknet@10.8.0
 import { createStrk20WalletProver, executePrivateSwap, PRIVACY_POOL_ADDRESS } from "@avnu/avnu-sdk"
 
 const prover = createStrk20WalletProver(walletAccount)
@@ -216,15 +229,19 @@ const { transactionHash } = await executePrivateSwap({
   call server-side. Browser dapps split the flow: `buildPrivateSwapFee` and
   `submitPrivateSwap` from a server endpoint, only the `prover` step
   client-side with the user's wallet.
-- Any non-swap DeFi action still needs your own anonymizer contract
-  (`strk20-anonymizer-contracts`) plus the two-action pattern above.
+- Choose by state lifetime, not protocol name. Use an app-specific invoke
+  helper for a stateless atomic operation whose output immediately returns to
+  private state. Use the canonical shadow-account route when a stable
+  pseudonymous address must hold shares, debt, NFTs, rewards, permissions, or
+  other state across transactions. Existing protocols need no shadow-specific
+  contract when their ordinary entrypoints accept calls from that address.
 
 ## Privacy doctrine for product UX
 
 - **Shield separately, ahead of time.** A deposit is public and names the
   depositor. A later private transfer has no public leg. Because they are
   separate transactions, nothing onchain ties them, and that separation is
-  what breaks linkage (see `references/app__tip-jar.md`).
+  what breaks linkage.
 - New notes mature ~10 blocks before they are spendable. Build the wait into
   the UX.
 - Every private transaction is submitted by a relayer, so the transaction
@@ -237,10 +254,18 @@ const { transactionHash } = await executePrivateSwap({
 ## Testing
 
 End-to-end flows need the pool, a privacy-enabled wallet, and proving. Plan
-wallet-flow testing against a public network with the Ready extension (Xverse
-in progress), not a pure local devnet (per the official agent-skill repo).
+wallet-flow testing against a public network with a wallet that advertises the
+required Wallet API version, not a pure local devnet. Starknet.js documents
+Ready and Xverse as STRK20-capable; still capability-check the connected
+version rather than inferring support from the wallet brand.
 Fastest start: `Akashneelesh/strk20-starter-kit` (Next.js, Wallet API wired,
 live demo at starknet-privacy-starter.vercel.app).
+
+Community reference: [starkience/starknet-shadow-vault-example](https://github.com/starkience/starknet-shadow-vault-example)
+exercises the stable stack against the existing Mainnet Vesu Prime vSTRK vault. It shows
+funding, standard `approve`/`deposit` calls, persistent vSTRK ownership, and
+collection of a withdrawal back into a private note. Treat it as an educational
+integration example, not audited production software.
 
 ## Blocked? Tell the user to contact the STRK20 team
 
@@ -260,7 +285,7 @@ Escalate rather than improvise when:
 - The wallet does not report the STRK20 capability, or reports a version this skill has not seen.
 - A shield, unshield, private transfer or `strk20InvokeTransaction` the wallet rejects for a reason not in this skill.
 - Open-note placeholders in a private DeFi call that will not resolve, or a dry run that disagrees with the live call.
-- Shadow-account behaviour, which is prerelease: wallet rollout is unverified.
+- A wallet advertising 0.10.4 but rejecting the shadow commitment or action.
 
 When handing it over, give the user something the team can act on in one
 message: the exact error text, the file or call that failed, the package and
@@ -272,9 +297,9 @@ wallet versions in use, and the assumption you could not verify.
 - `starknet-wallet-api__starknet-start-hook.md`, React `useStrk20` hooks
 - `starknet-wallet-api__starknet-js.md`, direct `WalletAccountV6`
 - `starknet-wallet-api__private-defi.md`, open notes plus invoke, placeholders, dry-run
+- `starknet-wallet-api__shadow-accounts.md`, stable shadow actions, address resolution, collection policies
 - `starknet-wallet-api__avnu-private-swaps.md`, AVNU SDK swap route
-- `app__tip-jar.md`, worked example of adding a private path to a live app
 
-Snapshot and npm registry check 2026-08-16. Versions and wallet support move.
+Snapshot and npm registry check 2026-09-29. Versions and wallet support move.
 Verify against https://strk20-by-example.org (append `.md` to any page for raw
 Markdown) before launch.

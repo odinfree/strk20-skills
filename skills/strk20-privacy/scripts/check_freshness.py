@@ -31,12 +31,12 @@ USER_AGENT = {"User-Agent": "strk20-skills-freshness-check"}
 TIMEOUT_SECONDS = 20
 
 NPM_TAGS = {
-    ("starknet", "latest"): "10.0.2",
-    ("starknet", "next"): "10.7.1",
-    ("@starknet-io/get-starknet-discovery", "next"): "6.0.4",
-    ("@starknet-io/get-starknet-wallet-standard", "next"): "6.0.5",
-    ("@starknet-io/types-js", "latest"): "0.10.3",
-    ("@starknet-io/types-js", "beta"): "0.10.4-beta.2",
+    ("starknet", "latest"): "10.8.0",
+    ("starknet", "next"): "11.0.2",
+    ("@starknet-io/get-starknet-discovery", "next"): "6.0.6",
+    ("@starknet-io/get-starknet-wallet-standard", "next"): "6.0.6",
+    ("@starknet-io/types-js", "latest"): "0.10.4",
+    ("@starknet-io/types-js", "beta"): "0.10.4-beta.3",
     ("@avnu/avnu-sdk", "latest"): "4.2.0",
 }
 
@@ -57,14 +57,14 @@ ABSENT_PRIVACY_PATHS = {
     "packages/escrow/Scarb.toml",
     "packages/sub_account_anonymizer/Scarb.toml",
 }
-EXPECTED_SDK_VERSION = "0.14.3-rc.6"
+EXPECTED_SDK_VERSION = "0.14.3-rc.8"
 EXPECTED_CLIENT_VERSION = "0.1.0"
 
 WALLET_SPEC_URL = (
     "https://raw.githubusercontent.com/starkware-libs/starknet-specs/"
     "master/wallet-api/wallet_rpc.json"
 )
-EXPECTED_WALLET_SPEC_BRANCH_VERSION = "0.10.4-rc.1"
+EXPECTED_WALLET_SPEC_BRANCH_VERSION = "0.10.4"
 
 TEAM_CONTACTS_URL = "https://strk20.starknet.io/hackathon"
 EXPECTED_TEAM_CONTACTS = {
@@ -76,14 +76,20 @@ EXPECTED_TEAM_CONTACTS = {
 EXPECTED_SEPOLIA_POOL = (
     "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91"
 )
+EXPECTED_MAINNET_SHADOW_ANONYMIZER = (
+    "0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7"
+)
+EXPECTED_SEPOLIA_SHADOW_ANONYMIZER = (
+    "0x010a2285310c107c731d997afc147afb7495daff6397c2d242133d9fe8d9b147"
+)
 
 EXPECTED_DOC_PATHS = {
     "actions-and-proofs",
     "agent-skill",
-    "app/tip-jar",
     "builder-privacy-overview",
     "channels-and-subchannels",
     "compliance",
+    "contract-addresses",
     "helpers/escrow",
     "helpers/privacy-invoke",
     "helpers/swap-helper",
@@ -99,11 +105,13 @@ EXPECTED_DOC_PATHS = {
     "sdk/proving-config",
     "sdk/register",
     "sdk/setup-requirements",
+    "sdk/shadow-accounts",
     "sdk/transfer",
     "sdk/withdraw",
     "starknet-wallet-api/avnu-private-swaps",
     "starknet-wallet-api/overview",
     "starknet-wallet-api/private-defi",
+    "starknet-wallet-api/shadow-accounts",
     "starknet-wallet-api/starknet-js",
     "starknet-wallet-api/starknet-start-hook",
     "viewing-keys",
@@ -251,13 +259,13 @@ def check_wallet_spec() -> list[tuple[str, str]]:
         spec = fetch_json(WALLET_SPEC_URL)
         current = spec.get("info", {}).get("version")
     except Exception as error:
-        return [result("error", "Wallet API development spec", str(error))]
+        return [result("error", "Wallet API spec", str(error))]
 
     status = "ok" if current == EXPECTED_WALLET_SPEC_BRANCH_VERSION else "drift"
     output = [
         result(
             status,
-            "Wallet API development spec",
+            "Wallet API spec",
             f"expected {EXPECTED_WALLET_SPEC_BRANCH_VERSION}, found {current}",
         )
     ]
@@ -316,22 +324,46 @@ def check_by_example(quick: bool) -> list[tuple[str, str]]:
         builder_overview = fetch_text(
             "https://strk20-by-example.org/builder-privacy-overview.md"
         )
-        if "shadow_account_anonymizer" in builder_overview:
-            output.append(result("ok", "builder overview account terminology", "shadow accounts"))
-        elif "sub_account_anonymizer" in builder_overview:
+        expected_terms = (
+            "### Shadow accounts",
+            "Wallet API `0.10.4`",
+            "starknet.js `10.8.0`",
+        )
+        missing_terms = [term for term in expected_terms if term not in builder_overview]
+        if not missing_terms:
             output.append(
-                result(
-                    "warn",
-                    "builder overview account terminology",
-                    "still uses the pre-RC.5 package name",
-                )
+                result("ok", "builder overview shadow-account route", "stable route present")
             )
         else:
             output.append(
-                result("drift", "builder overview account terminology", "known package name absent")
+                result(
+                    "drift",
+                    "builder overview shadow-account route",
+                    f"missing={missing_terms}",
+                )
             )
     except Exception as error:
-        output.append(result("error", "builder overview account terminology", str(error)))
+        output.append(result("error", "builder overview shadow-account route", str(error)))
+
+    try:
+        addresses = fetch_text("https://strk20-by-example.org/contract-addresses.md")
+        missing_addresses = [
+            address
+            for address in (
+                EXPECTED_MAINNET_SHADOW_ANONYMIZER,
+                EXPECTED_SEPOLIA_SHADOW_ANONYMIZER,
+            )
+            if address not in addresses
+        ]
+        status = "ok" if not missing_addresses else "drift"
+        note = (
+            "Mainnet and Sepolia present"
+            if not missing_addresses
+            else f"missing={missing_addresses}"
+        )
+        output.append(result(status, "shadow-account deployments", note))
+    except Exception as error:
+        output.append(result("error", "shadow-account deployments", str(error)))
 
     if quick or not found:
         return output

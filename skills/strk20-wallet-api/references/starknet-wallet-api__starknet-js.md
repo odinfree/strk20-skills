@@ -12,13 +12,13 @@ handling** than the React hooks provide.
 ## Install
 
 ```shell
-npm install starknet@^10.4.0
+npm install starknet@^10.8.0
 ```
 
-**Pin the version.** STRK20 support landed in starknet.js 10.4.0 and ships on the
-npm `next` tag. A bare `npm install starknet` resolves to `latest`, which is
-still 10.0.x and contains none of the STRK20 API — `WalletAccountV6`,
-`strk20InvokeTransaction`, and `STRK20_ACTION` will all be missing.
+**Pin the version.** starknet.js `10.8.0` is the current stable release and
+includes Wallet API `0.10.4`, including shadow accounts. The `11.x` line is
+published on the npm `next` tag; use it only when your app has completed the
+[v10 to v11 migration](https://starknet-js.com/docs/guides/migrate/).
 
 ## When to use this
 
@@ -34,6 +34,12 @@ Your app connects to the user's privacy-enabled wallet through `starknet.js`, th
 issues STRK20 actions through the Wallet API. The wallet manages the private
 state, ZK proof, and signature wallet-side.
 
+`STRK20_ACTION` now has five variants: `deposit`, `withdraw`, `transfer`,
+`invoke`, and `shadow_account_invoke`. The last route executes standard
+starknet.js `Call` objects through a persistent per-dapp identity. See
+[Shadow Accounts](/starknet-wallet-api/shadow-accounts) for the action shape,
+commitments, address resolution, and collection policies.
+
 ## What to keep in mind
 
 - **Wallet support is required.** The connected wallet must support the STRK20
@@ -42,13 +48,13 @@ state, ZK proof, and signature wallet-side.
   handling explicitly.
 - **Follow the upstream docs.** For connecting with get-starknet v6 and the
   `WalletAccountV6` API, see the
-  [starknet.js WalletAccount guide](https://starknet-js.com/docs/next/guides/account/walletAccount/#with-get-starknet-v6).
+  [starknet.js WalletAccount guide](https://starknet-js.com/docs/guides/account/walletAccount/#with-get-starknet-v6).
 
 ## Read next
 
 - [Starknet Wallet API overview](/starknet-wallet-api/overview)
 - [starknet-start](/starknet-wallet-api/starknet-start-hook)
+- [Shadow Accounts](/starknet-wallet-api/shadow-accounts)
 - [Build Privacy Wallets](/sdk/getting-started)
 
 ---
-

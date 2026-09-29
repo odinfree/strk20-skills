@@ -20,20 +20,20 @@ shape), open the reference page.
 
 | Goal | Route | Skill |
 | --- | --- | --- |
-| Private dapp (DeFi, consumer, games) on top of users' wallets | Starknet Wallet API, plus an anonymizer contract for protocol-specific DeFi | `strk20-wallet-api` |
+| Private dapp (DeFi, consumer, games) on top of users' wallets | Starknet Wallet API; choose an invoke helper or shadow account by state lifetime | `strk20-wallet-api` |
 | The Cairo adapter a private DeFi flow calls | Anonymizer contract (`privacy_invoke`) | `strk20-anonymizer-contracts` |
 | A privacy wallet, or a backend holding its own keys | Privacy SDK (`createPrivateTransfers`) | `strk20-privacy-sdk` |
 | Embedded-wallet or AA product (Privy, Cartridge, chipi, cavos, Dynamic) | These manage user keys and are not privacy-enabled today. Treat the product as the key-holder and take the SDK route | `strk20-privacy-sdk` |
-| Hide the main-wallet link during account-based app activity | Shadow accounts, called private sub-accounts before SDK RC.5. SDK route shipped. Wallet API is in prerelease tooling, with wallet rollout unverified | `strk20-privacy-sdk` |
+| Hide the main-wallet link during persistent account-based app activity | Stable Wallet API shadow accounts for dapps; Privacy SDK for key-holding wallets and backends | `strk20-wallet-api` or `strk20-privacy-sdk` |
 | Fund from or withdraw to an EVM wallet (USDC) | Privacy Bridge over Circle CCTP | see Ecosystem below |
 | Operate proof generation yourself | Local Docker prover or remote host over SSH; screening still applies | `strk20-local-prover` for deployment, `strk20-privacy-sdk` for wallet wiring |
 
 Rules of thumb from the docs. Start with the narrowest route that keeps user
 keys in the right place. Wallet API first for user-facing dapps. Never ask a
-normal dapp user for their viewing key. For private DeFi, expect both a Wallet
-API flow and an app-specific anonymizer contract, and check for a first-party
-private path before routing anyone to an anonymizer: AVNU ships private swaps,
-so that flow needs no Cairo of your own.
+normal dapp user for their viewing key. For private DeFi, use an app-specific
+invoke helper for stateless atomic operations and the canonical shadow-account
+infrastructure for persistent positions or returning pseudonymous identities.
+Check for a first-party path before writing Cairo: AVNU ships private swaps.
 
 ## Map the trust boundary before coding
 
@@ -119,29 +119,29 @@ or write:
   required". Do not call the escrow a backdoor, and do not oversell. The
   edges (deposits, withdrawals, timing) are public.
 
-## Route status (snapshot 2026-09-02, verify before relying on it)
+## Route status (snapshot 2026-09-29, verify before relying on it)
 
-- Wallet API version 0.10.3. The official integration skill uses Ready as the
-  tested dapp baseline and still marks Xverse's dapp-facing Wallet API in
-  progress. Product docs also list Xverse for user privacy flows, so detect
-  the connected wallet's capability instead of inferring it from the brand.
-  Braavos and embedded-wallet providers are not privacy-enabled in the cited
-  integration sources.
+- Stable Wallet API 0.10.4 and starknet.js 10.8.0 include shadow accounts.
+  Starknet.js documents Ready and Xverse as STRK20-capable. Detect the
+  connected wallet's advertised capability instead of inferring support from
+  the brand.
 - Shadow accounts, called private sub-accounts in RC.4 and older docs, hide the
-  main-wallet link during account activity. Privacy SDK `0.14.3-rc.6` uses the
+  main-wallet link during account activity. Privacy SDK `0.14.3-rc.8` uses the
   names introduced in RC.5: `build().shadowAccounts(dappName)`,
   `shadowAccountAnonymizerAddress`, and the Cairo package
   `shadow_account_anonymizer`. The renamed views and event use new selectors,
   so RC.5 requires the upgraded anonymizer and an indexer spanning the upgrade
-  must match both event keys. Stable `@starknet-io/types-js` 0.10.3 lacks the
-  route. The Wallet API 0.10.4 development spec, types-js 0.10.4 beta, and
-  starknet.js 10.7.1 on npm `next` include the shadow-account action and
-  commitment method. That proves client plumbing exists, not that a connected
-  wallet implements it. Require the wallet to advertise the 0.10.4-rc.1
-  shadow-account schema or a compatible later version, then handle an
-  unsupported-method response. The SDK is still a release candidate. Confirm
-  the current API, wallet support, deployment, and audit readiness before
-  shipping.
+  must match both event keys. Stable `@starknet-io/types-js` 0.10.4 and
+  starknet.js 10.8.0 include the action and commitment method. Require the
+  wallet to advertise Wallet API 0.10.4 or later, then handle an
+  unsupported-method response. The low-level SDK remains a release candidate;
+  its release status does not make the stable Wallet API route prerelease.
+
+  The canonical `ShadowAccountAnonymizer` is deployed at
+  `0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7`
+  on Mainnet and
+  `0x010a2285310c107c731d997afc147afb7495daff6397c2d242133d9fe8d9b147`
+  on Sepolia. Re-check the current contract-address page before shipping.
 
   A shadow account is fresh only when the nonce is fresh. Its funding link to
   the main wallet is hidden, while the shadow address, dapp calls, balances,
@@ -149,9 +149,8 @@ or write:
   `(dappName, nonce)` account is reused. Inputs can start in encrypted pool
   notes. Assets and positions are public while held by the shadow account.
   Collection returns them to an open note whose owner link is hidden, while
-  its token and amount remain public. See the SDK skill's
-  `references/shadow-accounts.md` for the builder model, collection policies,
-  test evidence, and launch gates.
+  its token and amount remain public. Read the Wallet API or SDK
+  `references/shadow-accounts.md` page for the selected integration route.
 - Privacy Bridge (EVM USDC to and from the pool over Circle CCTP) is open
   source and early. Read its README before planning around it.
 - The docs' own launch checklist: verify wallet support, API versions,
@@ -166,10 +165,8 @@ or write:
   TypeScript SDK, pool contracts, and anonymizer reference packages),
   `starkware-libs/privacy-bridge`, `Akashneelesh/strk20-starter-kit` (Next.js
   starter with the Wallet API pre-wired), `Akashneelesh/awesome-strk20`.
-- Official integration agent skill: `npx skills add starkience/strk20-agent-skills`.
-  It scans a repo, interviews the developer, picks a route, writes
-  `STRK20_INTEGRATION_PLAN.md`, and executes on approval. It never writes
-  Cairo and never touches key material.
+- Agent skills: `npx skills add welttowelt/strk20-skills`. They provide this
+  router plus route-specific Wallet API, Cairo helper, SDK, and prover guidance.
 - Request for Startups: https://strk20.starknet.io/rfp (26 open problem
   statements). Incubator: https://proof.starknet.io. Brand kit:
   https://strk20.starknet.io/brand.md plus `/brand/tokens.json`.
@@ -183,7 +180,7 @@ package path, Wallet API status, or pool address:
 python3 scripts/check_freshness.py
 ```
 
-Add `--quick` to skip the 30 per-page liveness requests. Exit code 1 means a
+Add `--quick` to skip the 32 per-page liveness requests. Exit code 1 means a
 checked fact moved. Exit code 2 means a lookup failed and the result is
 incomplete. The checker is adapted from the official integration skill. It
 cannot verify wallet rollout or contract audit status, so check those sources
@@ -223,3 +220,4 @@ wallet versions in use, and the assumption you could not verify.
 - `actions-and-proofs.md`, phase table, balance invariant, proving pipeline
 - `compliance.md`, screening, escrowed key, visibility table, limitations
 - `agent-skill.md`, the official integration agent skill
+- `contract-addresses.md`, current Mainnet and Sepolia pool and anonymizer deployments

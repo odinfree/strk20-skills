@@ -1,204 +1,124 @@
-# Shadow accounts: builder guide and verified status
+# Shadow Accounts
 
-This is an authored implementation note, not a verbatim source snapshot. It
-combines the user-supplied `shadow-accounts_overview.pdf` dated 2026-08-28 with
-the `starkware-libs/starknet-privacy` source at commit
-`980da8affafb9f8350975ca93c03b2299a31ac9b` and the Wallet API development
-spec. The PDF footer identifies the Starknet privacy pool, the shadow-account
-anonymizer, and Apache-2.0. Re-check the linked source before launch.
+Source: https://strk20-by-example.org/sdk/shadow-accounts
 
-## What a shadow account is
+> Build and invoke deterministic per-dapp shadow accounts with the Starknet Privacy SDK
 
-A shadow account is a real Starknet account controlled through the configured
-shadow-account anonymizer. The anonymizer maps an identity commitment to the
-account, deploys it when needed, executes dapp calls through it, and collects
-selected token proceeds into STRK20 open notes.
+Shadow accounts give one user a persistent, pseudonymous identity for one
+dapp. They are useful for positions that live across transactions - staking,
+lending, rewards, and any protocol that needs to recognize a returning caller.
 
-The configured privacy pool is the only contract allowed to drive the
-anonymizer. The user directs the account indirectly through a proved private
-action. The shadow account does not expose the user's viewing key.
+This page follows Privacy SDK `0.14.3-rc.8`. The old `subaccounts(...)` API was
+renamed and is not compatible with the current anonymizer. Use
+`shadowAccounts(...)` throughout.
 
-Its identity is deterministic:
+Snippets assume `transfers`, `account` and `provider` from
+[Getting Started](/sdk/getting-started).
 
-```text
-identity_key = compute_identity_key(user, viewing_key, anonymizer)
-partial_commitment = hash(identity_key, dapp_name)
-commitment = hash(partial_commitment, nonce)
-shadow_account = contract_address(commitment, primer_class, anonymizer)
+## Configure the anonymizer
+
+Pass the deployment for the connected network when creating `transfers`:
+
+```typescript
+const transfers = createPrivateTransfers({
+  account,
+  viewingKeyProvider,
+  provingProvider,
+  discoveryProvider,
+  poolContractAddress: process.env.POOL_ADDRESS!,
+  shadowAccountAnonymizerAddress: process.env.SHADOW_ACCOUNT_ANONYMIZER_ADDRESS!,
+})
 ```
 
-One user can therefore have many accounts per dapp. A new nonce selects a new
-address. Reusing the same `(dapp_name, nonce)` selects the same account.
+Calling `shadowAccounts(...)` without `shadowAccountAnonymizerAddress` throws.
+Use the current Mainnet or Sepolia value from
+[Deployed Contract Addresses](/contract-addresses).
 
-## Privacy boundary
+## Commitments and addresses
 
-Shadow accounts hide the direct onchain link between the main wallet and the
-dapp account. They do not hide the shadow account's own public history.
+The builder derives the partial and full commitments locally from the user,
+viewing key, anonymizer, dapp name, and nonce:
 
-Public and linkable:
+```typescript
+import { shadowAccountAddress } from "@starkware-libs/starknet-privacy-sdk"
 
-- the shadow account address and deployment
-- target contracts, entrypoints, calldata, and emitted events
-- token balances and other public account state
-- DeFi positions or NFTs held by the account
-- timing and repeated use of the same `(dapp_name, nonce)` account
+const shadow = transfers.build().shadowAccounts("myDapp")
+const partial = await shadow.partialCommitment()
+const commitment = await shadow.commitment(0n)
 
-Private through STRK20:
-
-- which registered user derived the identity commitment
-- which private notes funded the action
-- the direct main-wallet link, unless the surrounding flow reveals it
-- the owner link of proceeds collected into open notes
-
-Do not describe assets as shielded while they sit in the shadow account. They
-are public account state during that interval. Open-note token and amount
-remain public. A precise lifecycle is:
-
-```text
-encrypted input note
-  -> public shadow-account activity
-  -> open note with hidden owner link and public token/amount
-  -> optional private spend into an encrypted note
+const address = shadowAccountAddress(
+  commitment,
+  BigInt(process.env.SHADOW_ACCOUNT_ANONYMIZER_ADDRESS!),
+)
 ```
 
-Publishing the nonce-independent partial commitment lets a dapp recognize the
-user's shadow accounts without learning each nonce. That intentionally groups
-those accounts inside the dapp's own context. Publish it only when the product
-needs that continuity.
+`shadowAccountAddress` uses the exported, fixed `PRIMER_CLASS_HASH`, matching
+the current Cairo deployment pattern. It works before the account is deployed
+and does not require an RPC call. The package also exports the lower-level
+`shadowAccountPartialCommitment` and `shadowAccountCommitment` helpers when you
+already hold the raw felts.
 
-## SDK route
+## Invoke through the shadow account
 
-SDK `0.14.3-rc.5` uses `shadowAccounts`, not the RC.4 `subaccounts` name.
+Fund the shadow address, create an open note for each expected output token,
+then queue the calls. The SDK translates this into one `ComputeAndInvoke`
+against the `ShadowAccountAnonymizer`.
 
-```ts
-const nonce = 0n
+```typescript
+import { Open } from "@starkware-libs/starknet-privacy-sdk"
 
-const fullCommitment = await transfers
-  .build()
-  .shadowAccounts("myDapp")
-  .commitment(nonce)
+const provingBlockId = (await provider.getBlockNumber()) - 10
 
 const { callAndProof } = await transfers
-  .build()
-  .with(rewardToken)
-  .transfer({ recipient: userAddress, amount: Open })
+  .build({ autoDiscover: { notes: "refresh" } })
+  .with(STRK)
+  .withdraw({ recipient: address, amount: 5n * 10n ** 18n })
+  .surplusTo(account.address, false)
+  .with(STRK)
+  .transfer({ recipient: account.address, amount: Open })
   .done()
   .shadowAccounts("myDapp")
-  .invoke(nonce, {
-    calls: [dappContract.populate("claim", [])],
-    collectPolicy: { type: "diff" },
+  .invoke(0n, {
+    calls: [stakingContract.populate("stake", { amount: 1000n })],
+    collectPolicy: { type: "all" },
   })
   .execute({ provingBlockId })
+
+// Submit callAndProof with the usual proofDetails + tip: 0n tail.
 ```
 
-The exact fluent-chain order can move during the release-candidate cycle. Use
-the installed TypeScript declarations as the final authority. Configure
-`shadowAccountAnonymizerAddress` in `createPrivateTransfers`.
+`collectPolicy` is optional in the SDK and defaults to `{ type: "all" }`.
 
-Collection policy selects how much of each token returns to its open note:
+| `collectPolicy`             | Amount collected into each open note            |
+| --------------------------- | ----------------------------------------------- |
+| `{ type: "all" }`           | The token's entire shadow-account balance       |
+| `{ type: "diff" }`          | Only the balance gained during this interaction |
+| `{ type: "exact", amount }` | Exactly `amount`                                |
 
-| Policy | Amount collected |
-| --- | --- |
-| `{ type: "all" }` | Entire shadow-account token balance |
-| `{ type: "diff" }` | Positive balance gained during this interaction |
-| `{ type: "exact", amount }` | The specified amount |
+## Read deployed and undeployed accounts
 
-One policy applies to every open note settled by one invocation. `diff` fails
-when the post-call balance is below the pre-call balance. `exact` fails when
-the account lacks the requested amount.
+The exported `ShadowAccountAnonymizerABI` includes these views:
 
-## Wallet route
+- `get_shadow_accounts(partial, start, end, until_undeployed)` resolves a nonce
+  range and returns `{ nonce, address, is_deployed }` for each entry.
+- `get_shadow_account(commitment)` returns the stored address of an already
+  deployed account, or zero when it has not been deployed.
+- `get_shadow_account_class_hash()` returns the class installed after the
+  primer deployment. It is not the class hash used for address derivation.
 
-The Wallet API 0.10.4-rc.1 development spec defines:
+The scan range is limited to 1,024 nonces. With `until_undeployed: true`, the
+range stops at the first address that has not been deployed.
 
-- `wallet_strk20ShadowAccountCommitment`
-- `STRK20_SHADOW_ACCOUNT_INVOKE_ACTION`
-- `dapp_name`, `nonce`, `calls`, and `collect_policy`
+## Things to notice
 
-The method computes a commitment locally and sends no transaction. With a
-nonce it returns one full account commitment. Without a nonce it returns the
-partial commitment shared by that user's accounts for the dapp.
+- A shadow account's balances, calls, and positions are public. Privacy comes
+  from hiding the link to the user's main account.
+- A shadow account has no keys. Only the anonymizer can execute through it.
+- One transaction can contain at most one invoke-phase action, whether it is a
+  normal `invoke` or a shadow-account invocation.
+- One collection policy applies to every open note settled by the invocation.
+- The current anonymizer returns the shadow-account address used by deposits so
+  the pool can apply its screening policy to that address.
 
-`@starknet-io/types-js@0.10.4-beta.2` and `starknet@10.7.1` on npm `next`
-include the new action. Stable types-js 0.10.3 does not. The presence of the
-types and `WalletAccountV6.strk20ShadowAccountCommitment()` does not prove a
-connected wallet implements the method. Capability-check the wallet at
-runtime. Require `supportedWalletApi()` to advertise the 0.10.4-rc.1
-shadow-account schema or a compatible later version, handle an
-unsupported-method response, and keep a fallback path.
-
-The monorepo's `@starkware-libs/starknet-privacy-client` source includes a
-builder and address resolver at version 0.1.0. It was not available from the
-configured package registry during the 2026-08-28 check. Treat it as source
-code, not a generally installable package, until the registry proves otherwise.
-
-## Long-lived DeFi patterns from the overview
-
-The PDF adds two useful architectural patterns. They are examples, not recipes
-verified by this audit:
-
-- A lending account can supply collateral, hold a debt position, shield the
-  borrowed token, then reuse the same nonce later to repay and collect the
-  released collateral. The PDF names Vesu.
-- An unstaking account can hold a withdrawal NFT through its waiting period,
-  redeem it later, then collect the redeemed STRK into the pool. The PDF names
-  Endur.
-
-These patterns need account continuity, so do not rotate the nonce between
-the opening and closing legs. That continuity also links those legs to the
-same public shadow account.
-
-## Does it work?
-
-Verified locally on 2026-08-28 against upstream commit
-`980da8affafb9f8350975ca93c03b2299a31ac9b`:
-
-- Cairo `shadow_account_anonymizer`: 43 tests passed with Starknet Foundry
-  0.63.0
-- SDK shadow-account unit file: 7 tests passed
-- client shadow-account, prover, and client unit files: 22 tests passed
-- the latest relevant upstream devnet workflow before the check completed
-  successfully on 2026-08-25
-
-The upstream devnet tests exercise deployment, dapp calls, collection into an
-open note, deterministic address lookup, and dapp scoping. They set the
-anonymizer policy to `Exempt` because the suite lacks a mock prover that can
-attest the shadow account. The intended deployed policy is `Delegated`, where
-the pool screens the shadow account. The test therefore proves the core flow,
-not the production screening integration.
-
-No public-network anonymizer address, wallet implementation receipt, or
-production deployment receipt was established in this check. The defensible
-status is:
-
-- contract layer works under tests
-- SDK and client plumbing works under unit tests
-- relevant upstream devnet workflow passed
-- prerelease Wallet API and starknet.js plumbing exists
-- production screening, wallet rollout, audits, and public deployment still
-  need current receipts
-
-## Launch gate
-
-Before shipping:
-
-1. Pin the SDK, starknet.js, types-js, and Wallet API versions together.
-2. Verify the anonymizer address and class hash for the target network.
-3. Verify the connected wallet implements both the shadow action and
-   commitment method.
-4. Test `Delegated` screening with the production proving path.
-5. Test fresh and reused nonces, all three collection policies, interrupted
-   async positions, and recovery after failed dapp calls.
-6. State the public shadow-account history in product copy.
-7. Obtain current audit and deployment evidence before describing the route as
-   production-ready.
-
-## Primary sources
-
-- <https://github.com/starkware-libs/starknet-privacy/tree/980da8affafb9f8350975ca93c03b2299a31ac9b/packages/shadow_account_anonymizer>
-- <https://github.com/starkware-libs/starknet-privacy/blob/980da8affafb9f8350975ca93c03b2299a31ac9b/sdk/src/internal/shadow-accounts.ts>
-- <https://github.com/starkware-libs/starknet-privacy/blob/980da8affafb9f8350975ca93c03b2299a31ac9b/client/src/shadow-accounts.ts>
-- <https://github.com/starkware-libs/starknet-privacy/blob/980da8affafb9f8350975ca93c03b2299a31ac9b/e2e/tests/devnet/shadow-account-invoke.test.ts>
-- <https://github.com/starkware-libs/starknet-specs/blob/master/wallet-api/wallet_rpc.json>
-- <https://github.com/starkware-libs/starknet-specs/pull/406>
-- <https://github.com/starkware-libs/starknet-privacy/actions/runs/32838588203>
+Next: [Proving Configuration](/sdk/proving-config) - prepare and submit the
+resulting call safely.
