@@ -12,13 +12,12 @@ They are the recommended starting point for **React dapps**.
 ## Install
 
 ```shell
-npm install starknet@^10.4.0
+npm install starknet@^10.8.0
 ```
 
-**Pin the version.** STRK20 support landed in starknet.js 10.4.0 and ships on the
-npm `next` tag. A bare `npm install starknet` resolves to `latest`, which is
-still 10.0.x and contains none of the STRK20 API — `WalletAccountV6`,
-`strk20InvokeTransaction`, and `STRK20_ACTION` will all be missing.
+**Pin the version.** starknet.js `10.8.0` is the current stable release and
+includes Wallet API `0.10.4`. Confirm that the Starknet Start version you use
+supports the specific STRK20 action before exposing it in your UI.
 
 ## When to use this
 
@@ -52,4 +51,3 @@ state, ZK proof, and signature wallet-side.
 - [Anonymizer Contract Anatomy](/helpers/privacy-invoke)
 
 ---
-

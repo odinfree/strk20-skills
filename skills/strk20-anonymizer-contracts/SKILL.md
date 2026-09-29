@@ -1,6 +1,6 @@
 ---
 name: strk20-anonymizer-contracts
-description: Write, review, or audit Cairo anonymizer (helper) contracts for STRK20 private DeFi. Covers the privacy_invoke entry point the pool calls, OpenNoteDeposit returns, the balance-delta idiom, and the swap, Vesu lending, and escrow patterns. Use for the contract side of any STRK20 DeFi integration, or when a privacy_invoke call is being designed or debugged. Pairs with strk20-wallet-api (how a dapp reaches the helper), strk20-privacy (concepts), and cairo-contracts or cairo-security for general Cairo work.
+description: Write, review, or audit Cairo anonymizer (helper) contracts for stateless or atomic STRK20 private DeFi. Covers the privacy_invoke entry point, OpenNoteDeposit returns, the balance-delta idiom, and swap, Vesu lending, and escrow patterns. Use when a privacy_invoke helper is actually the selected route; persistent positions may instead use the canonical shadow-account route in strk20-wallet-api.
 ---
 
 # STRK20 anonymizer contracts (`privacy_invoke`)
@@ -9,6 +9,14 @@ Anonymizer contracts, also called helper contracts, are how private funds
 interact with the outside world (DEXs, lending vaults, escrows) without
 revealing who is behind the interaction. Full doc pages with complete Cairo
 sources sit in `references/`.
+
+Route before writing Cairo. Use a helper when one shared caller should perform
+an atomic operation and return its output immediately to private notes. Use the
+canonical `ShadowAccountAnonymizer` through `strk20-wallet-api` when each user
+needs a stable pseudonymous address that holds shares, debt, NFTs, rewards, or
+other state across transactions. A target protocol with ordinary callable
+entrypoints does not need a protocol-specific helper merely because the dapp
+uses shadow accounts.
 
 ## The pattern: an atomic sandwich
 
