@@ -149,8 +149,9 @@ or write:
   `(dappName, nonce)` account is reused. Inputs can start in encrypted pool
   notes. Assets and positions are public while held by the shadow account.
   Collection returns them to an open note whose owner link is hidden, while
-  its token and amount remain public. Read the Wallet API or SDK
-  `references/shadow-accounts.md` page for the selected integration route.
+  its token and amount remain public. Read the Wallet API skill's
+  `references/starknet-wallet-api__shadow-accounts.md` or the SDK skill's
+  `references/shadow-accounts.md` for the selected integration route.
 - Privacy Bridge (EVM USDC to and from the pool over Circle CCTP) is open
   source and early. Read its README before planning around it.
 - The docs' own launch checklist: verify wallet support, API versions,

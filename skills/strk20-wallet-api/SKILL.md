@@ -205,8 +205,8 @@ pool, then helper, then AMM, then helper. They never see who initiated it.
 
 ## AVNU private swaps, no Cairo at all
 
-Swapping is the one DeFi action that needs no helper of your own. AVNU
-deployed its executor.
+AVNU private swaps use its deployed executor, so this route needs no helper
+of your own.
 
 ```ts
 // npm install @avnu/avnu-sdk@^4.2.0 starknet@10.8.0
