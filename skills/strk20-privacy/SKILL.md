@@ -166,7 +166,7 @@ or write:
   TypeScript SDK, pool contracts, and anonymizer reference packages),
   `starkware-libs/privacy-bridge`, `Akashneelesh/strk20-starter-kit` (Next.js
   starter with the Wallet API pre-wired), `Akashneelesh/awesome-strk20`.
-- Agent skills: `npx skills add welttowelt/strk20-skills`. They provide this
+- Agent skills: `npx skills add odinfree/strk20-skills`. They provide this
   router plus route-specific Wallet API, Cairo helper, SDK, and prover guidance.
 - Request for Startups: https://strk20.starknet.io/rfp (26 open problem
   statements). Incubator: https://proof.starknet.io. Brand kit:

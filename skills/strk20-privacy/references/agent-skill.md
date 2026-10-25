@@ -10,7 +10,7 @@ the working knowledge behind these pages - how the pool works, how a dapp asks
 a wallet to act, how to write the Cairo adapter, and how to drive the SDK:
 
 ```sh
-npx skills add welttowelt/strk20-skills
+npx skills add odinfree/strk20-skills
 ```
 
 Then work normally. The skills fire on their own when a task touches STRK20 -
@@ -62,5 +62,5 @@ as raw Markdown. Start from [/llms.txt](/llms.txt) (index of all pages as `.md`
 URLs) or fetch the whole site in one file at [/llms-full.txt](/llms-full.txt).
 
 Source, docs, and issues:
-[github.com/welttowelt/strk20-skills](https://github.com/welttowelt/strk20-skills)
+[github.com/odinfree/strk20-skills](https://github.com/odinfree/strk20-skills)
 (Apache 2.0).
